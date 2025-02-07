@@ -483,6 +483,7 @@
         background: #000;
         transition: transform 0.3s ease;
         aspect-ratio: var(--video-aspect-ratio);
+        margin: 20px;
       }
 
       .video-preview.portrait {
