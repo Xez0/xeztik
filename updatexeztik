@@ -1,0 +1,2452 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="xez.svg" type="image/svg+xml">
+    <title>TikTok Video Downloader</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* CSS Styles */
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+        --surface-color: #ffffff;
+        --text-primary: #1a202c;
+        --text-secondary: #4a5568;
+        --border-color: #e2e8f0;
+        --success-color: #48bb78;
+        --error-color: #e53e3e;
+        --border-radius: 16px;
+        --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        --color-bg1: rgb(108, 0, 162);
+    --color-bg2: rgb(0, 17, 82);
+    --color1: 18, 113, 255;
+    --color2: 221, 74, 255;
+    --color3: 100, 220, 255;
+    --color4: 200, 50, 50;
+    --color5: 180, 180, 50;
+    --color-interactive: 140, 100, 255;
+    --circle-size: 80%;
+    --blending: hard-light;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif, Arial, Helvetica, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        color: var(--text-primary);
+        line-height: 1.5;
+        overflow-x: hidden;
+        /* background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab); */
+        /* background-size: 400% 400%; */
+        /* animation: gradientBG 15s ease infinite; */
+      }
+
+      /* @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      } */
+
+      .g1, .g2, .g3, .g4, .g5 {
+    position: absolute;
+    mix-blend-mode: var(--blending);
+    width: var(--circle-size);
+    height: var(--circle-size);
+    opacity: 1;
+  }
+
+  .g1 {
+    background: radial-gradient(circle at center, rgba(var(--color1), 0.8) 0, rgba(var(--color1), 0) 50%) no-repeat;
+    top: calc(50% - var(--circle-size) / 2);
+    left: calc(50% - var(--circle-size) / 2);
+    transform-origin: center center;
+    animation: moveVertical 30s ease infinite;
+  }
+
+  .g2 {
+    background: radial-gradient(circle at center, rgba(var(--color2), 0.8) 0, rgba(var(--color2), 0) 50%) no-repeat;
+    top: calc(50% - var(--circle-size) / 2);
+    left: calc(50% - var(--circle-size) / 2);
+    transform-origin: calc(50% - 400px);
+    animation: moveInCircle 20s reverse infinite;
+  }
+
+  .g3 {
+    background: radial-gradient(circle at center, rgba(var(--color3), 0.8) 0, rgba(var(--color3), 0) 50%) no-repeat;
+    top: calc(50% - var(--circle-size) / 2 + 200px);
+    left: calc(50% - var(--circle-size) / 2 - 500px);
+    transform-origin: calc(50% + 400px);
+    animation: moveInCircle 40s linear infinite;
+  }
+
+  .g4 {
+    background: radial-gradient(circle at center, rgba(var(--color4), 0.8) 0, rgba(var(--color4), 0) 50%) no-repeat;
+    top: calc(50% - var(--circle-size) / 2);
+    left: calc(50% - var(--circle-size) / 2);
+    transform-origin: calc(50% - 200px);
+    animation: moveHorizontal 40s ease infinite;
+  }
+
+  .g5 {
+    background: radial-gradient(circle at center, rgba(var(--color5), 0.8) 0, rgba(var(--color5), 0) 50%) no-repeat;
+    width: calc(var(--circle-size) * 2);
+    height: calc(var(--circle-size) * 2);
+    top: calc(50% - var(--circle-size));
+    left: calc(50% - var(--circle-size));
+    transform-origin: calc(50% - 800px) calc(50% + 200px);
+    animation: moveInCircle 20s ease infinite;
+  }
+
+  @keyframes moveInCircle {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(180deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes moveVertical {
+    0% { transform: translateY(-50%); }
+    50% { transform: translateY(50%); }
+    100% { transform: translateY(-50%); }
+  }
+
+  @keyframes moveHorizontal {
+    0% { transform: translateX(-50%) translateY(-10%); }
+    50% { transform: translateX(50%) translateY(10%); }
+    100% { transform: translateX(-50%) translateY(-10%); }
+  }
+
+  .gradients-container {
+    filter: url(#goo) blur(40px);
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Add gradient styles */
+  .gradient-bg {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    overflow: hidden;
+    background: linear-gradient(40deg, var(--color-bg1), var(--color-bg2));
+    top: 0;
+    left: 0;
+    z-index: -1;
+  }
+
+
+    
+  .container {
+    --line-width: 2px;
+    --line-color: rgba(89, 0, 255, 0.8); /* Neon purple */
+    --start-angle: 36deg;
+    --angle: 0deg;
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: 
+        0 0 15px rgba(89, 0, 255, 0.2),
+        var(--card-shadow);
+    max-width: 600px;
+    width: 100%;
+    z-index: 1;
+}
+
+.container {
+    --line-width: 2px;
+    --line-color: rgb(0, 0, 0);
+    --start-angle: 36deg;
+    --angle: 0deg;
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: 
+        0 0 15px rgba(49, 49, 49, 0.2),
+        var(--card-shadow);
+    max-width: 600px;
+    width: 100%;
+    z-index: 1;
+    animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+    opacity: 0;
+    pointer-events: auto;
+}
+
+.container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: var(--line-width);
+    background: conic-gradient(
+        from var(--angle),
+        transparent 0,
+        var(--line-color) 15%,
+        transparent 20%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: rotate 10s linear infinite;
+    filter: 
+        drop-shadow(0 0 8px var(--line-color))
+        drop-shadow(0 0 17px var(--line-color));
+    will-change: transform;
+    opacity: 1;
+    pointer-events: none;
+}
+
+@property --angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes rotate {
+    to {
+        --angle: 360deg;
+    }
+}
+
+/* Keep your existing popIn animation */
+@keyframes popIn {
+        0% {
+            transform: scale(0.5);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.05); 
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+}
+
+
+      .notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 1000;
+      }
+
+      .notification {
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        background: var(--surface-color);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        position: relative;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid var(--success-color);
+        max-width: 90%;
+      }
+
+      .notification.error {
+        border-left-color: var(--error-color);
+      }
+
+      .notification.show {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .notification.hide {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      .app-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        position: relative;
+      }
+
+      .app-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        animation: slideIn 0.5s ease-in-out;
+      }
+
+      .app-description {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        animation: slideIn 0.5s ease-in-out 0.2s;
+        animation-fill-mode: both;
+        position: relative;
+        padding-bottom: 1rem;
+      }
+
+      .app-description::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50%;
+        height: 1px;
+        background: var(--border-color);
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .input-group {
+        position: relative;
+        margin-bottom: 1.5rem;
+        animation: slideIn 0.5s ease-in-out 0.4s;
+        animation-fill-mode: both;
+      }
+
+      .url-input {
+        width: 100%;
+        padding: 0.875rem 90px 0.875rem 0.875rem;
+        border: 2px solid var(--border-color);
+        border-radius: calc(var(--border-radius) - 4px);
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+        max-width: 100%;
+      }
+
+      .url-input:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .paste-button {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background 0.3s ease, transform 0.2s ease;
+        max-width: 100px;
+      }
+
+      .paste-button:hover {
+        transform: translateY(-50%) scale(1.05);
+      }
+
+      .paste-button[data-state="clear"] {
+        background: #e53e3e;
+      }
+
+      .icon-cross {
+        width: 16px;
+        height: 16px;
+        color: white;
+      }
+
+      #search-button {
+        width: 100%;
+        max-width: 200px;
+        padding: 0.875rem;
+        border: none;
+        border-radius: calc(var(--border-radius) - 4px);
+        background: var(--primary-gradient);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 auto 1rem;
+        display: block;
+        font-size: 0.875rem;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
+      }
+
+      #search-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .loader {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        margin: 1rem auto;
+        display: none;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .preview-container {
+        display: none;
+        opacity: 0;
+        transition: all 0.5s ease;
+        margin-top: 1.5rem;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .video-card {
+        background: var(--surface-color);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .video-preview-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .video-preview {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: calc(var(--border-radius) - 4px);
+        background: #000;
+        transition: transform 0.3s ease;
+        aspect-ratio: var(--video-aspect-ratio);
+      }
+
+      .video-preview.portrait {
+        --video-aspect-ratio: 9 / 16;
+        max-width: 400px;
+      }
+
+      .video-preview.landscape {
+        --video-aspect-ratio: 16 / 9;
+        max-width: 600px;
+      }
+
+      .video-preview.square {
+        --video-aspect-ratio: 1 / 1;
+        max-width: 400px;
+      }
+
+      .video-preview.ratio-4-3 {
+        --video-aspect-ratio: 4 / 3;
+        max-width: 500px;
+      }
+
+      .video-preview.ratio-3-4 {
+        --video-aspect-ratio: 3 / 4;
+        max-width: 400px;
+      }
+
+      .video-preview.ratio-21-9 {
+        --video-aspect-ratio: 21 / 9;
+        max-width: 800px;
+      }
+
+      .video-preview.ratio-5-4 {
+        --video-aspect-ratio: 5 / 4;
+        max-width: 500px;
+      }
+
+      .video-preview.ratio-3-2 {
+        --video-aspect-ratio: 3 / 2;
+        max-width: 600px;
+      }
+
+      /* Carousel Styles */
+      .carousel-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        overflow: hidden;
+        padding: 10px;
+      }
+
+      .carousel-slide {
+        display: flex;
+        transition: transform 0.5s ease-in-out;
+        width: 100%;
+      }
+
+      .carousel-item {
+        min-width: 100%;
+        position: relative;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .carousel-item img {
+        max-width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        border-radius: 12px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 2px solid var(--border-color);
+      }
+
+      .carousel-item img:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .carousel-nav {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .carousel-button {
+        background: #667eea;
+        border: none;
+        color: white;
+        padding: 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .carousel-button:hover {
+        background: #764ba2;
+        transform: scale(1.1);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      .carousel-button:disabled {
+        background: #cbd5e0;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      .image-info {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        background: #f8fafc;
+        padding: 0.5rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+      }
+
+      .video-info {
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: calc(var(--border-radius) - 4px);
+        margin-bottom: 1rem;
+        width: 100%;
+        border: 1px solid var(--border-color);
+      }
+
+      .info-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        gap: 0.5rem;
+      }
+
+      .info-label {
+        font-weight: 600;
+        min-width: 80px;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+      }
+
+      .info-value {
+        color: var(--text-secondary);
+        flex: 1;
+        font-size: 0.875rem;
+      }
+
+      .caption-container {
+        margin-bottom: 1.5rem;
+        position: relative;
+      }
+
+      .caption-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+
+      .caption-textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        resize: none;
+        font-size: 0.875rem;
+        background: var(--surface-color);
+        color: var(--text-primary);
+        min-height: 100px;
+      }
+
+      .caption-textarea.no-caption {
+        background-color: #ffe6e6;
+        color: #e53e3e;
+        font-style: italic;
+      }
+
+      @media (min-width: 768px) {
+        .caption-textarea {
+          min-height: 150px;
+        }
+      }
+
+      .copy-icon {
+        cursor: pointer;
+        width: 20px;
+        height: 20px;
+        color: var(--text-secondary);
+        transition: color 0.3s ease, transform 0.2s ease;
+      }
+
+      .copy-icon:hover {
+        color: var(--text-primary);
+        transform: scale(1.1);
+      }
+
+      .quality-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: transform 0.2s ease;
+      }
+
+      .quality-badge:hover {
+        transform: scale(1.05);
+      }
+
+      .quality-hd {
+        background: #9ae6b4;
+        color: #22543d;
+      }
+
+      .quality-sd {
+        background: #fbd38d;
+        color: #744210;
+      }
+
+      .footer {
+        margin-top: 1.5rem;
+        font-size: 0.875rem;
+        color: #666;
+        text-align: center;
+        position: relative;
+        padding-top: 1rem;
+        max-width: 100%;
+        user-select: none;
+      }
+
+      .footer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50%;
+        height: 1px;
+        background: var(--border-color);
+      }
+
+      .download-btn {
+        position: relative;
+        width: 100%;
+        max-width: 200px;
+        height: 48px;
+        font-size: 15px;
+        font-weight: 500;
+        color: white;
+        background-color: #0078d4;
+        border: none;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin: 0 auto 1rem;
+        display: block;
+      }
+
+      .download-btn:not(.disabled):hover {
+        background-color: #106ebe;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      }
+
+      .download-btn:not(.disabled):active {
+        transform: translateY(1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .download-btn.disabled {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .download-btn.downloading {
+        animation: subtle-pulse 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        background-color: #0078d4;
+      }
+
+      .download-btn.complete {
+        background-color: #107c10;
+      }
+
+      .content-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .button-text {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition: all 0.4s ease;
+        user-select: none;
+        line-height: 1;
+      }
+
+      .complete-container {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .checklist {
+        fill: none;
+        stroke: white;
+        width: 20px;
+        height: 20px;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: none;
+      }
+
+      .checklist.visible {
+        opacity: 1;
+        transform: scale(1);
+        display: block;
+      }
+
+      .progress-wrapper {
+        position: absolute;
+        width: 100%;
+        height: 3px;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background-color: rgba(0, 128, 0, 0.8);
+        width: 0%;
+        transition: width 0.3s linear;
+      }
+
+      @keyframes subtle-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 0 15px rgba(0, 120, 212, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 120, 212, 0);
+        }
+      }
+
+      @keyframes success-scale {
+        0% {
+          transform: scale(0.9);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      #download-other-button {
+        width: 100%;
+        max-width: 200px;
+        padding: 0.875rem;
+        border: none;
+        border-radius: calc(var(--border-radius) - 4px);
+        background: var(--primary-gradient);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 auto 1rem;
+        display: block;
+        font-size: 0.875rem;
+      }
+
+      #download-other-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Styling untuk elemen audio */
+      audio {
+        max-width: 100%;
+        margin-top: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      /* Musik Container */
+      #music-container {
+        margin: 20px auto;
+        padding: 1.5rem;
+        background: var(--surface-color);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--card-shadow);
+        width: 100%;
+        max-width: 500px;
+        display: none;
+        position: relative;
+      }
+
+      .music-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--border-color);
+      }
+
+      .music-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .music-title svg {
+        width: 24px;
+        height: 24px;
+        color: #e73c7e;
+      }
+
+      .audio-wrapper {
+        position: relative;
+        margin-top: 1rem;
+      }
+
+      audio {
+        width: 100%;
+        height: 40px;
+      }
+
+      /* Custom styling untuk audio element */
+      audio::-webkit-media-controls-panel {
+        background-color: #f8fafc;
+        border-radius: 8px;
+      }
+
+      audio::-webkit-media-controls-play-button {
+        background-color: #667eea;
+        border-radius: 50%;
+      }
+
+      audio::-webkit-media-controls-timeline {
+        background-color: #e2e8f0;
+        border-radius: 2px;
+        margin-left: 10px;
+        margin-right: 10px;
+      }
+
+      .download-music-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--primary-gradient);
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: transform 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .download-music-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      .download-music-link svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .download-music-link .progress-wrapper {
+        position: absolute;
+        width: 100%;
+        height: 3px;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: scaleX(0);
+        transform-origin: left;
+      }
+
+      .download-music-link .progress-bar {
+        height: 100%;
+        background-color: rgba(0, 255, 0, 0.8);
+        width: 0%;
+        transition: width 0.3s linear;
+      }
+
+      .download-music-link.downloading {
+        pointer-events: none;
+        animation: subtle-pulse 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      }
+
+      .download-music-link.complete {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      }
+
+      @media (max-width: 640px) {
+        .container {
+          padding: 1rem;
+        }
+
+        .app-title {
+          font-size: 1.5rem;
+        }
+
+        .app-description {
+          font-size: 0.8rem;
+        }
+
+        .url-input {
+          padding: 0.75rem 80px 0.75rem 0.75rem;
+          font-size: 0.8rem;
+        }
+
+        .paste-button {
+          padding: 0.4rem 0.75rem;
+          font-size: 0.75rem;
+        }
+
+        #search-button {
+          padding: 0.75rem;
+          font-size: 0.8rem;
+        }
+
+        .video-info {
+          padding: 0.75rem;
+        }
+
+        .info-label {
+          min-width: 70px;
+          font-size: 0.8rem;
+        }
+
+        .info-value {
+          font-size: 0.8rem;
+        }
+
+        .caption-textarea {
+          min-height: 100px;
+          font-size: 0.8rem;
+        }
+
+        .footer {
+          font-size: 0.8rem;
+        }
+
+        .download-btn {
+          height: 40px;
+          font-size: 14px;
+        }
+
+        .download-btn .button-text {
+          font-size: 14px;
+        }
+
+        #download-other-button {
+          padding: 0.75rem;
+          font-size: 0.8rem;
+        }
+
+        /* Penyesuaian untuk musik container di mobile */
+        #music-container {
+          padding: 1rem;
+        }
+
+        .music-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+
+        .music-title {
+          font-size: 1rem;
+        }
+
+        .download-music-link {
+          width: 100%;
+          justify-content: center;
+        }
+
+        /* Penyesuaian carousel di mobile */
+        .carousel-container {
+          padding: 5px;
+        }
+
+        .carousel-item img {
+          max-height: 300px;
+        }
+
+        .carousel-button {
+          width: 35px;
+          height: 35px;
+          padding: 10px;
+        }
+
+        .image-info {
+          font-size: 0.8rem;
+        }
+      }
+
+      /* Audio player styles */
+      .audio-player {
+        /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+        background: linear-gradient( 150.4deg,  rgb(63, 219, 204) 11.7%, rgba(32,42,235,1) 82.4% );
+        border-radius: 30px;
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        min-width: 280px;
+        max-width: 600px;
+        height: 4rem;
+        margin: 1rem auto;
+        box-shadow: var(--card-shadow);
+      }
+
+      .play-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+      }
+
+      .time-display,
+      .duration {
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        min-width: 35px;
+      }
+
+      .progress-container {
+        flex-grow: 1;
+        height: 3rem;
+        position: relative;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        cursor: grab;
+        touch-action: none; /* Prevent scrolling while dragging on mobile */
+        min-width: 100px;
+      }
+
+      .waveform {
+        position: absolute;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        gap: 1px;
+        transition: transform 0.1s ease;
+      }
+
+      .bar {
+        width: 3px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50px;
+      }
+
+      .bar.active {
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      .progress-line {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        /* background: rgba(255, 255, 255, 0.9); */
+        background: #424242;
+        border-radius: 50%;
+        top: 50%;
+        transform: translateY(-50%);
+        left: 0;
+      }
+
+      audio {
+        display: none;
+      }
+
+      @media (max-width: 480px) {
+        .audio-player {
+          padding: 0.25rem 0.5rem;
+          height: 3.5rem;
+        }
+
+        .time-display,
+        .duration {
+          font-size: 11px;
+          min-width: 32px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gradient-bg">
+      <svg xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+        </defs>
+      </svg>
+      <div class="gradients-container">
+        <div class="g1"></div>
+        <div class="g2"></div>
+        <div class="g3"></div>
+        <div class="g4"></div>
+        <div class="g5"></div>
+        <div class="interactive"></div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="app-header">
+        <h1 class="app-title">
+          <span>TikTok Downloader</span>
+          <span role="img" aria-label="mobile">📱</span>
+        </h1>
+        <p class="app-description">
+          Unduh Video TikTok dengan resolusi HD tanpa WM
+        </p>
+      </div>
+
+      <div class="input-group">
+        <input
+          type="text"
+          class="url-input"
+          id="url"
+          placeholder="Paste TikTok URL here..."
+        />
+        <button
+          class="paste-button"
+          id="paste-delete-button"
+          onclick="handlePasteDelete()"
+          data-state="paste"
+        >
+          <span>📋 Paste</span>
+        </button>
+      </div>
+
+      <button class="main-button" onclick="fetchVideoInfo()" id="search-button">
+        Download Now
+      </button>
+
+      <div class="loader" id="loader"></div>
+
+      <div class="preview-container" id="preview">
+        <div class="video-card">
+          <div class="video-preview-container">
+            <video
+              id="video-preview"
+              class="video-preview"
+              controls
+              preload="metadata"
+              style="display: none"
+            ></video>
+
+            <!-- Carousel untuk multiple images -->
+            <div
+              class="carousel-container"
+              id="carousel-container"
+              style="display: none"
+            >
+              <div class="carousel-slide" id="carousel-slide"></div>
+              <div class="carousel-nav">
+                <button
+                  class="carousel-button"
+                  id="prev-button"
+                  onclick="moveSlide(-1)"
+                >
+                  ❮
+                </button>
+                <button
+                  class="carousel-button"
+                  id="next-button"
+                  onclick="moveSlide(1)"
+                >
+                  ❯
+                </button>
+              </div>
+              <div class="image-info" id="image-info"></div>
+            </div>
+          </div>
+
+          <div class="video-info">
+            <div class="caption-container">
+              <div class="caption-header">
+                <h3 class="info-label">📝 Caption</h3>
+                <svg
+                  class="copy-icon"
+                  onclick="copyCaption()"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+
+                </svg>
+              </div>
+              <textarea
+                id="caption"
+                class="caption-textarea"
+                readonly
+              ></textarea>
+            </div>
+
+            <div class="info-row">
+              <span class="info-label">👤 Username</span>
+              <span class="info-value">
+                <span id="author-username">@xez</span>
+                <svg class="copy-icon" onclick="copyUsername(this)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+</svg>
+              </span>
+            </div>
+
+            <div class="info-row">
+              <span class="info-label">👤 Nama</span>
+              <span class="info-value">
+                <span id="author-name">Xez</span>
+                <svg class="copy-icon" onclick="copyName(this)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+</svg>
+            </div>
+
+            <div class="info-row" id="video-info" style="display: none">
+              <span class="info-label">📊 Quality</span>
+              <span class="info-value" id="quality"></span>
+            </div>
+
+            <div class="info-row" id="video-duration" style="display: none">
+              <span class="info-label">⏱️ Duration</span>
+              <span class="info-value" id="duration"></span>
+            </div>
+
+            <div class="info-row" id="video-size" style="display: none">
+              <span class="info-label">💾 Ukuran Video</span>
+              <span class="info-value"> <span id="file-size"></span> MB </span>
+            </div>
+
+            <div class="info-row" id="audio-size">
+              <span class="info-label">🎵 Ukuran Musik</span>
+              <span class="info-value">
+                <span id="ukuran-musik"></span>
+              </span>
+            </div>
+
+            <div class="info-row" id="image-resolution">
+              <span class="info-label">📏 Resolusi</span>
+              <span class="info-value" id="resolution"></span>
+            </div>
+
+            <div class="info-row" id="image-size">
+              <span class="info-label">💾 Ukuran Gambar</span>
+              <span class="info-value">
+                <span id="image-file-size"></span>
+              </span>
+            </div>
+          </div>
+
+          <button class="download-btn" id="downloadBtn">
+            <div class="content-wrapper">
+              <div class="complete-container">
+                <span class="button-text">Simpan Video</span>
+                <svg class="checklist" viewBox="0 0 24 24">
+                  <path
+                    d="M4 12l6 6L20 6"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="progress-wrapper">
+              <div class="progress-bar"></div>
+            </div>
+          </button>
+
+          <!-- Tempat untuk menampilkan musik -->
+          <div id="music-container">
+            <div class="music-header">
+              <div class="music-title">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                  />
+                </svg>
+                <span>Musik Terkait</span>
+              </div>
+              <a href="#" class="download-music-link" id="download-music-link">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+                Download
+              </a>
+            </div>
+            <div class="audio-wrapper">
+              <div class="audio-player">
+                <button class="play-btn" id="playBtn">
+                  <svg
+                    id="playIcon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    fill="white"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  <svg
+                    id="pauseIcon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    fill="white"
+                    viewBox="0 0 24 24"
+                    style="display: none"
+                  >
+                    <path d="M6 19h4V5H6zm8-14v14h4V5z" />
+                  </svg>
+                </button>
+                <span class="time-display">0:00</span>
+                <div class="progress-container">
+                  <div class="waveform"></div>
+                  <div class="progress-line"></div>
+                </div>
+                <span class="duration">0:00</span>
+                <audio id="audio" controls>
+                  <source src="" type="audio/mpeg" />
+                </audio>
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="main-button"
+            onclick="resetForm()"
+            id="download-other-button"
+          >
+            Download Video Lainnya
+          </button>
+        </div>
+      </div>
+      <div class="footer">©Xez | Tiktok Video Downloader</div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <script>
+      // JavaScript Code
+      let videoData = null;
+      let activeNotifications = new Set();
+      let isDownloading = false;
+
+      // Variabel kontrol carousel
+      let currentSlide = 0;
+      let totalSlides = 0;
+
+      // Fungsi untuk menggeser slide
+      function moveSlide(direction) {
+        currentSlide += direction;
+        if (currentSlide < 0) currentSlide = 0;
+        if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+
+        updateCarousel();
+        updateImageInfo(currentSlide);
+      }
+
+      // Update tampilan carousel
+      function updateCarousel() {
+        const slide = document.getElementById("carousel-slide");
+        slide.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+        document.getElementById("prev-button").disabled = currentSlide === 0;
+        document.getElementById("next-button").disabled =
+          currentSlide === totalSlides - 1;
+      }
+
+      // Update info gambar
+      function updateImageInfo(index) {
+        const imageInfo = document.getElementById("image-info");
+        const currentImage = document.querySelectorAll(".carousel-item")[index];
+
+        if (currentImage) {
+          const resolution = currentImage.dataset.resolution;
+          const size = currentImage.dataset.size;
+          imageInfo.innerHTML = `Resolusi: ${resolution} | Ukuran: ${size}`;
+        }
+      }
+
+      // Validasi URL TikTok
+      function isValidTikTokUrl(url) {
+        const tiktokRegex = /https?:\/\/(www\.)?tiktok\.com\/@.+\/video\/\d+/;
+        const tiktokShortRegex = /https?:\/\/(vt\.)?tiktok\.com\/.+/;
+        return tiktokRegex.test(url) || tiktokShortRegex.test(url);
+      }
+
+      // Konversi short URL ke full URL
+      async function getFullTikTokUrl(shortUrl) {
+        try {
+          const response = await fetch(shortUrl, { redirect: "manual" });
+          if (response.status === 301 || 302) {
+            return response.headers.get("location");
+          }
+          return shortUrl;
+        } catch (error) {
+          console.error("Error expanding URL:", error);
+          return shortUrl;
+        }
+      }
+
+      // Handle paste/delete button
+      async function handlePasteDelete() {
+        const input = document.getElementById("url");
+        const button = document.getElementById("paste-delete-button");
+
+        if (button.getAttribute("data-state") === "paste") {
+          try {
+            const text = await navigator.clipboard.readText();
+            if (isValidTikTokUrl(text)) {
+              input.value = text;
+              button.innerHTML = `
+                            <span>Clear</span>
+                            <svg class="icon-cross" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        `;
+              button.setAttribute("data-state", "clear");
+              button.style.background = "#e53e3e";
+            } else {
+              input.value = "";
+              showNotification("⚠️ Please enter a valid TikTok URL", true);
+            }
+          } catch (err) {
+            showNotification("Unable to access clipboard", true);
+          }
+        } else {
+          input.value = "";
+          button.innerHTML = "<span>📋 Paste</span>";
+          button.setAttribute("data-state", "paste");
+          button.style.background = "#667eea";
+        }
+      }
+
+      // Format durasi video
+      function formatDuration(seconds) {
+        if (seconds === "Unknown") return "Unknown";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
+      }
+
+      // Format ukuran file
+      function formatFileSize(bytes) {
+        if (bytes < 1024) {
+          return bytes.toFixed(2) + " Bytes";
+        } else if (bytes < 1024 * 1024) {
+          return (bytes / 1024).toFixed(2) + " KB";
+        } else if (bytes < 1024 * 1024 * 1024) {
+          return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        } else {
+          return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+        }
+      }
+
+      // Tampilkan notifikasi
+      function showNotification(message, isError = false) {
+        if (activeNotifications.has(message)) return;
+
+        const notificationContainer = document.getElementById(
+          "notification-container"
+        );
+        const notification = document.createElement("div");
+        notification.className = `notification ${isError ? "error" : ""}`;
+        notification.textContent = message;
+
+        notificationContainer.prepend(notification);
+        activeNotifications.add(message);
+
+        setTimeout(() => {
+          notification.classList.add("show");
+        }, 10);
+
+        setTimeout(() => {
+          notification.classList.remove("show");
+          notification.classList.add("hide");
+
+          setTimeout(() => {
+            notification.remove();
+            activeNotifications.delete(message);
+          }, 300);
+        }, 3000);
+      }
+
+      // Fetch video info
+      async function fetchVideoInfo() {
+        const url = document.getElementById("url").value;
+        const loader = document.getElementById("loader");
+        const searchButton = document.getElementById("search-button");
+        const inputGroup = document.querySelector(".input-group");
+        const previewDiv = document.getElementById("preview");
+
+        if (!url || !isValidTikTokUrl(url)) {
+          showNotification("⚠️ Please enter a valid TikTok URL", true);
+          return;
+        }
+
+        try {
+          loader.style.display = "block";
+          searchButton.disabled = true;
+          searchButton.textContent = "Processing...";
+
+          // Konversi short URL ke full URL
+          const fullUrl = await getFullTikTokUrl(url);
+
+          // Fetch video info dari API TikTok
+          const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(
+            fullUrl || url
+          )}`;
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!data.data) {
+            throw new Error("No video data found in response");
+          }
+
+          videoData = {
+            video_url: data.data.play,
+            image_urls: data.data.images || [], // Simpan semua URL gambar
+            music: data.data.music, // Simpan data musik
+            video_id: data.data.id,
+            caption: data.data.title,
+            author: data.data.author.unique_id,
+            name: data.data.author.nickname,
+            duration: data.data.duration,
+            quality: data.data.size > 5 * 1024 * 1024 ? "HD" : "SD",
+            is_image: data.data.images && data.data.images.length > 0,
+            file_size_mb: (data.data.size / (1024 * 1024)).toFixed(2), // Ambil ukuran file video dari respons API
+          };
+
+          // Proses pengambilan dan penampilan musik
+          const musicContainer = document.getElementById("music-container");
+          if (videoData.music) {
+            const musicUrl = videoData.music;
+
+            // Ambil ukuran file musik
+            const musicSizeResponse = await fetch(musicUrl);
+            const musicSize = musicSizeResponse.headers.get("content-length");
+
+            // Buat elemen audio untuk memutar musik
+            const audioElement = musicContainer.querySelector("audio");
+            audioElement.src = musicUrl;
+
+            // Tampilkan ukuran musik
+            document.getElementById("ukuran-musik").textContent = musicSize
+              ? formatFileSize(parseInt(musicSize))
+              : "Ukuran tidak tersedia";
+
+            // Tampilkan container musik
+            musicContainer.style.display = "block";
+          } else {
+            // Jika tidak ada musik, tampilkan pesan
+            musicContainer.innerHTML = "<p>Tidak ada musik yang ditemukan.</p>";
+            musicContainer.style.display = "block";
+          }
+
+          // Handle Image
+          const videoPreview = document.getElementById("video-preview");
+          const carouselContainer =
+            document.getElementById("carousel-container");
+          const carouselSlide = document.getElementById("carousel-slide");
+
+          if (videoData.is_image) {
+            videoPreview.style.display = "none";
+            carouselSlide.innerHTML = "";
+            carouselContainer.style.display = "block";
+
+            // Buat slide untuk setiap gambar
+            videoData.image_urls.forEach((imgUrl, index) => {
+              const slideDiv = document.createElement("div");
+              slideDiv.className = "carousel-item";
+
+              const img = document.createElement("img");
+              img.src = imgUrl;
+              img.alt = `Image ${index + 1}`;
+              img.onload = async function () {
+                // Update data atribut
+                slideDiv.dataset.resolution = `${this.naturalWidth}x${this.naturalHeight}`;
+
+                try {
+                  const imageSizeResponse = await fetch(imgUrl, {
+                    method: "HEAD",
+                  });
+                  if (imageSizeResponse.ok) {
+                    const contentLength =
+                      imageSizeResponse.headers.get("Content-Length");
+                    slideDiv.dataset.size = contentLength
+                      ? formatFileSize(parseInt(contentLength))
+                      : "Ukuran tidak tersedia";
+                  }
+                } catch (error) {
+                  console.error("Error image size:", error);
+                  slideDiv.dataset.size = "Ukuran tidak tersedia";
+                }
+
+                // Update info jika ini adalah gambar pertama
+                if (index === 0) {
+                  updateImageInfo(0);
+                }
+              };
+
+              slideDiv.appendChild(img);
+              carouselSlide.appendChild(slideDiv);
+            });
+
+            totalSlides = videoData.image_urls.length;
+            currentSlide = 0;
+            updateCarousel();
+
+            // Sembunyikan elemen yang tidak diperlukan untuk gambar
+            document.getElementById("video-info").style.display = "none";
+            document.getElementById("video-duration").style.display = "none";
+            document.getElementById("video-size").style.display = "none";
+            document.getElementById("audio-size").style.display = "flex"; // Tampilkan ukuran musik
+            document.getElementById("image-resolution").style.display = "flex";
+            document.getElementById("image-size").style.display = "flex";
+          } else {
+            // Handle Video
+            carouselContainer.style.display = "none";
+            videoPreview.src = videoData.video_url;
+            videoPreview.style.display = "block";
+
+            // Deteksi rasio aspek video
+            videoPreview.addEventListener("loadedmetadata", () => {
+              const width = videoPreview.videoWidth;
+              const height = videoPreview.videoHeight;
+              const aspectRatio = width / height;
+
+              // Hapus class sebelumnya (jika ada)
+              videoPreview.classList.remove(
+                "portrait",
+                "landscape",
+                "square",
+                "ratio-4-3",
+                "ratio-3-4",
+                "ratio-21-9",
+                "ratio-5-4",
+                "ratio-3-2"
+              );
+
+              // Tambahkan class berdasarkan rasio aspek
+              if (Math.abs(aspectRatio - 9 / 16) < 0.1) {
+                videoPreview.classList.add("portrait"); // 9:16 (portrait)
+              } else if (Math.abs(aspectRatio - 16 / 9) < 0.1) {
+                videoPreview.classList.add("landscape"); // 16:9 (landscape)
+              } else if (Math.abs(aspectRatio - 1) < 0.1) {
+                videoPreview.classList.add("square"); // 1:1 (square)
+              } else if (Math.abs(aspectRatio - 4 / 3) < 0.1) {
+                videoPreview.classList.add("ratio-4-3"); // 4:3
+              } else if (Math.abs(aspectRatio - 3 / 4) < 0.1) {
+                videoPreview.classList.add("ratio-3-4"); // 3:4
+              } else if (Math.abs(aspectRatio - 21 / 9) < 0.1) {
+                videoPreview.classList.add("ratio-21-9"); // 21:9 (ultrawide)
+              } else if (Math.abs(aspectRatio - 5 / 4) < 0.1) {
+                videoPreview.classList.add("ratio-5-4"); // 5:4
+              } else if (Math.abs(aspectRatio - 3 / 2) < 0.1) {
+                videoPreview.classList.add("ratio-3-2"); // 3:2
+              } else {
+                // Default: landscape jika rasio tidak dikenali
+                videoPreview.classList.add("landscape");
+              }
+            });
+
+            // Tampilkan info video
+            document.getElementById("video-info").style.display = "flex";
+            document.getElementById("video-duration").style.display = "flex";
+            document.getElementById("video-size").style.display = "flex";
+            document.getElementById("audio-size").style.display = "flex"; // Tampilkan ukuran musik
+            document.getElementById("image-resolution").style.display = "none";
+            document.getElementById("image-size").style.display = "none";
+          }
+
+          // Tampilkan caption
+          const captionTextarea = document.getElementById("caption");
+          if (videoData.caption) {
+            captionTextarea.value = videoData.caption;
+            captionTextarea.classList.remove("no-caption");
+          } else {
+            captionTextarea.value = "Tidak ada Caption";
+            captionTextarea.classList.add("no-caption");
+          }
+
+          document.getElementById(
+            "author-username"
+          ).textContent = `@${videoData.author}`;
+          document.getElementById("author-name").textContent =
+            videoData.name || "Unknown";
+          document.getElementById("file-size").textContent =
+            videoData.file_size_mb; // Tampilkan ukuran file video
+          document.getElementById("duration").textContent = formatDuration(
+            videoData.duration
+          );
+
+          const qualityHtml = `
+                    <span class="quality-badge ${
+                      videoData.quality === "HD" ? "quality-hd" : "quality-sd"
+                    }">
+                        ${videoData.quality}
+                    </span>
+                `;
+          document.getElementById("quality").innerHTML = qualityHtml;
+
+          // Sembunyikan input group dan tombol "Download Now"
+          inputGroup.style.display = "none";
+          searchButton.style.display = "none";
+
+          // Tampilkan preview container
+          previewDiv.style.display = "block";
+          requestAnimationFrame(() => {
+            previewDiv.style.opacity = 1;
+          });
+        } catch (error) {
+          console.error("Error fetching video info:", error);
+          showNotification(
+            `⚠️ Error: Gagal mengekstrak video. Pastikan URL valid.`,
+            true
+          );
+        } finally {
+          loader.style.display = "none";
+          searchButton.disabled = false;
+          searchButton.textContent = "Download Now";
+        }
+      }
+
+      // New Download Button Logic
+      const downloadBtn = document.getElementById("downloadBtn");
+      const buttonText = downloadBtn.querySelector(".button-text");
+      const checklist = downloadBtn.querySelector(".checklist");
+      const progressWrapper = downloadBtn.querySelector(".progress-wrapper");
+      const progressBar = downloadBtn.querySelector(".progress-bar");
+      let isProcessing = false;
+
+      downloadBtn.addEventListener("click", () => {
+        if (isProcessing) return;
+        startDownload();
+      });
+
+      function startDownload() {
+        if (isProcessing || !videoData) return;
+
+        isProcessing = true;
+        downloadBtn.classList.add("disabled", "downloading");
+        progressWrapper.style.transform = "scaleX(1)";
+
+        fadeText(() => {
+          buttonText.textContent = "Preparing...";
+          showText(() => {
+            downloadContent();
+          });
+        });
+      }
+
+      function downloadContent() {
+        if (videoData.is_image) {
+          // Download semua gambar sebagai ZIP
+          videoData.image_urls.forEach((imgUrl, index) => {
+            const a = document.createElement("a");
+            a.href = imgUrl;
+            a.download = `Xez-${videoData.video_id}-${index + 1}.jpg`;
+            a.click();
+          });
+          showNotification("Semua gambar berhasil diunduh! 🎉");
+          return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        const url = videoData.video_url;
+        xhr.open("GET", url, true);
+        xhr.responseType = "blob";
+
+        xhr.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            progressBar.style.width = `${percentComplete}%`;
+
+            // Update teks persentase
+            buttonText.textContent = `Downloading ${Math.round(
+              percentComplete
+            )}%`;
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const blob = xhr.response;
+            const downloadUrl = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `Xez-${videoData.video_id}HD.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            window.URL.revokeObjectURL(downloadUrl);
+
+            showNotification("Video berhasil di download! 🎉");
+
+            buttonText.textContent = "Complete";
+            checklist.classList.add("visible");
+            downloadBtn.classList.add("complete");
+
+            setTimeout(() => {
+              resetButton();
+            }, 5000);
+          } else {
+            console.error("Download error:", xhr.statusText);
+            showNotification(`❌ Download error: ${xhr.statusText}`, true);
+            resetButton();
+          }
+        };
+
+        xhr.onerror = () => {
+          console.error("Download error:", xhr.statusText);
+          showNotification(`❌ Download error: ${xhr.statusText}`, true);
+          resetButton();
+        };
+
+        xhr.send();
+      }
+
+      function resetButton() {
+        fadeText(() => {
+          checklist.classList.remove("visible");
+
+          setTimeout(() => {
+            downloadBtn.classList.remove("complete", "disabled", "downloading");
+            progressWrapper.style.transform = "scaleX(0)";
+            progressBar.style.width = "0";
+            buttonText.textContent = "Simpan Video";
+            showText();
+            downloadBtn.style.animation = "";
+            isProcessing = false;
+          }, 300);
+        });
+      }
+
+      function fadeText(callback) {
+        buttonText.style.opacity = "0";
+        setTimeout(callback, 300);
+      }
+
+      function showText(callback) {
+        buttonText.style.opacity = "1";
+        if (callback) setTimeout(callback, 300);
+      }
+
+      // Reset form
+      function resetForm() {
+        const inputGroup = document.querySelector(".input-group");
+        const searchButton = document.getElementById("search-button");
+        const previewDiv = document.getElementById("preview");
+        const urlInput = document.getElementById("url");
+        const pasteButton = document.getElementById("paste-delete-button");
+        const musicContainer = document.getElementById("music-container");
+        const videoPreview = document.getElementById("video-preview");
+        const carouselContainer = document.getElementById("carousel-container");
+        const captionTextarea = document.getElementById("caption");
+        const audioElement = document.querySelector("audio");
+        const downloadMusicLink = document.getElementById(
+          "download-music-link"
+        );
+
+        // Reset UI elements
+        inputGroup.style.display = "block";
+        searchButton.style.display = "block";
+        previewDiv.style.display = "none";
+        previewDiv.style.opacity = 0;
+        musicContainer.style.display = "none";
+        videoPreview.style.display = "none";
+        carouselContainer.style.display = "none";
+
+        // Reset input fields
+        urlInput.value = "";
+        captionTextarea.value = "";
+        captionTextarea.classList.remove("no-caption");
+        audioElement.src = "";
+        downloadMusicLink.href = "#";
+
+        // Reset paste button
+        pasteButton.innerHTML = "<span>📋 Paste</span>";
+        pasteButton.setAttribute("data-state", "paste");
+        pasteButton.style.background = "#667eea";
+
+        // Reset carousel
+        const carouselSlide = document.getElementById("carousel-slide");
+        carouselSlide.innerHTML = "";
+        carouselSlide.style.transform = "translateX(0)";
+        currentSlide = 0;
+        totalSlides = 0;
+        document.getElementById("image-info").textContent = "";
+
+        // Reset author info
+        document.getElementById("author-username").textContent = "@xez";
+        document.getElementById("author-name").textContent = "Xez";
+
+        // Reset metadata
+        document.getElementById("file-size").textContent = "";
+        document.getElementById("duration").textContent = "";
+        document.getElementById("quality").innerHTML = "";
+        document.getElementById("ukuran-musik").textContent = "";
+        document.getElementById("resolution").textContent = "";
+        document.getElementById("image-file-size").textContent = "";
+
+        // Reset download buttons
+        const resetButtonState = (button) => {
+          button.classList.remove("disabled", "downloading", "complete");
+          button.querySelector(".progress-wrapper").style.transform =
+            "scaleX(0)";
+          button.querySelector(".progress-bar").style.width = "0";
+          button.querySelector(".button-text").textContent =
+            button.id === "downloadBtn" ? "Simpan Video" : "Download Musik";
+          button.querySelector(".checklist").classList.remove("visible");
+        };
+
+        resetButtonState(downloadBtn);
+
+        // Reset video data
+        videoData = null;
+      }
+      // Copy caption
+      function copyCaption() {
+        const caption = document.getElementById("caption");
+        const copyIcon = document.querySelector(
+          '.copy-icon[onclick*="copyCaption"]'
+        );
+
+        caption.select();
+        document.execCommand("copy");
+
+        copyIcon.innerHTML = `
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            `;
+        copyIcon.style.color = "var(--success-color)";
+
+        setTimeout(() => {
+          copyIcon.innerHTML = `
+                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11v14z"/>
+                `;
+          copyIcon.style.color = "var(--text-secondary)";
+        }, 3000);
+
+        showNotification("Caption copied to clipboard! 📋");
+      }
+
+      // Copy creator username or name
+      function copyUsername(svgElement) {
+        const textToCopy =
+          document.getElementById("author-username").textContent;
+        const copyIcon = svgElement; // Elemen SVG yang diklik
+
+        if (!copyIcon) {
+          console.error("Copy icon for username not found.");
+          showNotification("Copy icon for username not found", true);
+          return;
+        }
+
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            const originalIconHTML = copyIcon.innerHTML;
+
+            // Ubah ikon menjadi checklist
+            copyIcon.innerHTML = `
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                `;
+            copyIcon.style.color = "var(--success-color)";
+
+            // Tampilkan notifikasi
+            showNotification("Username copied to clipboard!");
+
+            // Kembalikan ikon ke semula setelah 3 detik
+            setTimeout(() => {
+              copyIcon.innerHTML = originalIconHTML;
+              copyIcon.style.color = "var(--text-secondary)";
+            }, 3000);
+          })
+          .catch((err) => {
+            console.error("Failed to copy username:", err);
+            showNotification("Failed to copy username", true);
+          });
+      }
+
+      function copyName(svgElement) {
+        const textToCopy = document.getElementById("author-name").textContent;
+        const copyIcon = svgElement; // Elemen SVG yang diklik
+
+        if (!copyIcon) {
+          console.error("Copy icon for name not found.");
+          showNotification("Copy icon for name not found", true);
+          return;
+        }
+
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            const originalIconHTML = copyIcon.innerHTML;
+
+            // Ubah ikon menjadi checklist
+            copyIcon.innerHTML = `
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                `;
+            copyIcon.style.color = "var(--success-color)";
+
+            // Tampilkan notifikasi
+            showNotification("Name copied to clipboard!");
+
+            // Kembalikan ikon ke semula setelah 3 detik
+            setTimeout(() => {
+              copyIcon.innerHTML = originalIconHTML;
+              copyIcon.style.color = "var(--text-secondary)";
+            }, 3000);
+          })
+          .catch((err) => {
+            console.error("Failed to copy name:", err);
+            showNotification("Failed to copy name", true);
+          });
+      }
+
+      // Event listener untuk input URL
+      document.getElementById("url").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          fetchVideoInfo();
+        }
+      });
+
+      document.getElementById("url").addEventListener("input", (e) => {
+        const button = document.getElementById("paste-delete-button");
+        if (e.target.value === "") {
+          button.innerHTML = "<span>📋 Paste</span>";
+          button.setAttribute("data-state", "paste");
+          button.style.background = "#667eea";
+        } else if (button.getAttribute("data-state") === "paste") {
+          button.innerHTML = `
+                    <span>Clear</span>
+                    <svg class="icon-cross" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                `;
+          button.setAttribute("data-state", "clear");
+          button.style.background = "#e53e3e";
+        }
+      });
+
+      // Event listener untuk resize window
+      window.addEventListener("resize", () => {
+        const video = document.getElementById("video-preview");
+        if (video) {
+          video.style.height = "auto";
+        }
+      });
+
+      // Sembunyikan preview container saat halaman dimuat
+      document.addEventListener("DOMContentLoaded", () => {
+        const previewDiv = document.getElementById("preview");
+        if (previewDiv) {
+          previewDiv.style.display = "none";
+          previewDiv.style.opacity = 0;
+        }
+      });
+
+      // Logic untuk tombol "Download Musik"
+      document.getElementById('download-music-link').addEventListener('click', function(e) {
+    e.preventDefault();
+    if (!videoData || !videoData.music) {
+        showNotification("No music available to download", true);
+        return;
+    }
+
+    const downloadLink = this;
+    const originalHTML = downloadLink.innerHTML;
+    downloadLink.classList.add('downloading');
+    
+    // Tambahkan progress wrapper jika belum ada
+    if (!downloadLink.querySelector('.progress-wrapper')) {
+        downloadLink.insertAdjacentHTML('beforeend', `
+            <div class="progress-wrapper">
+                <div class="progress-bar"></div>
+            </div>
+        `);
+    }
+
+    const progressWrapper = downloadLink.querySelector('.progress-wrapper');
+    const progressBar = downloadLink.querySelector('.progress-bar');
+    progressWrapper.style.transform = 'scaleX(1)';
+
+    // Mulai download dengan XMLHttpRequest untuk tracking progress
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', videoData.music, true);
+    xhr.responseType = 'blob';
+
+    xhr.onprogress = (event) => {
+        if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            progressBar.style.width = `${percentComplete}%`;
+            downloadLink.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                ${Math.round(percentComplete)}%
+            `;
+        }
+    };
+
+    xhr.onload = () => {
+        if (xhr.status === 200) {
+            const blob = xhr.response;
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Xez-${videoData.video_id}-music.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            downloadLink.classList.add('complete');
+            downloadLink.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+                Complete
+            `;
+
+            showNotification("Musik berhasil di download! 🎉");
+
+            // Reset state setelah 3 detik
+            setTimeout(() => {
+                downloadLink.classList.remove('downloading', 'complete');
+                downloadLink.innerHTML = originalHTML;
+                progressWrapper.style.transform = 'scaleX(0)';
+                progressBar.style.width = '0';
+            }, 3000);
+        }
+    };
+
+    xhr.onerror = () => {
+        showNotification('❌ Download error', true);
+        downloadLink.classList.remove('downloading');
+        downloadLink.innerHTML = originalHTML;
+        progressWrapper.style.transform = 'scaleX(0)';
+    };
+
+    xhr.send();
+});
+
+      const audioPlayer = document.querySelector('.audio-player');
+const playBtn = document.querySelector('#playBtn');
+const audio = document.querySelector('#audio');
+const timeDisplay = document.querySelector('.time-display');
+const durationDisplay = document.querySelector('.duration');
+const waveform = document.querySelector('.waveform');
+const progressContainer = document.querySelector('.progress-container');
+const progressLine = document.querySelector('.progress-line');
+const barCount = 150;
+
+// Create waveform
+function createWaveform() {
+    waveform.innerHTML = '';
+    for (let i = 0; i < barCount; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const height = Math.sin(i * 0.2) * 10 + Math.random() * 20 + 10;
+        bar.style.height = `${height}px`;
+        waveform.appendChild(bar);
+    }
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    seconds = Math.floor(seconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function updateProgress() {
+    if (!audio.duration) return;
+    const progress = audio.currentTime / audio.duration;
+    const containerWidth = progressContainer.offsetWidth;
+    const waveformWidth = waveform.offsetWidth;
+    const translateX = progress * (waveformWidth - containerWidth);
+    
+    waveform.style.transform = `translateX(-${translateX}px)`;
+    progressLine.style.left = `${progress * 100}%`;
+    
+    document.querySelectorAll('.bar').forEach((bar, index) => {
+        if (index / barCount <= progress) {
+            bar.style.background = '#fff';
+        } else {
+            bar.style.background = 'rgba(255, 255, 255, 0.3)';
+        }
+    });
+    
+    timeDisplay.textContent = formatTime(audio.currentTime);
+}
+
+function updatePlayButton() {
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    playIcon.style.display = audio.paused ? 'block' : 'none';
+    pauseIcon.style.display = audio.paused ? 'none' : 'block';
+}
+
+playBtn.addEventListener('click', () => {
+    if (audio.paused) {
+        audio.play().catch(console.error);
+    } else {
+        audio.pause();
+    }
+    updatePlayButton();
+});
+
+// Initialize the waveform and event listeners
+audio.addEventListener('loadedmetadata', () => {
+    durationDisplay.textContent = formatTime(audio.duration);
+    waveform.style.width = `${progressContainer.offsetWidth * 2}px`;
+    createWaveform();
+});
+
+audio.addEventListener('timeupdate', updateProgress);
+audio.addEventListener('ended', updatePlayButton);
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    waveform.style.width = `${progressContainer.offsetWidth * 2}px`;
+});
+
+// Create waveform on load
+createWaveform();
+
+// Add this JavaScript after the existing audio player code
+
+let isDragging = false;
+let wasPlaying = false;
+
+function startDrag(e) {
+    isDragging = true;
+    wasPlaying = !audio.paused;
+    if (wasPlaying) audio.pause();
+    progressContainer.style.cursor = 'grabbing';
+    updateDrag(e);
+}
+
+function stopDrag() {
+    isDragging = false;
+    progressContainer.style.cursor = 'grab';
+    if (wasPlaying) {
+        audio.play().catch(console.error);
+    }
+}
+
+function updateDrag(e) {
+    if (!isDragging) return;
+
+    const rect = progressContainer.getBoundingClientRect();
+    let x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+
+    const progress = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+    audio.currentTime = progress * audio.duration;
+    updateProgress();
+}
+
+// Add these event listeners
+progressContainer.addEventListener('mousedown', startDrag);
+progressContainer.addEventListener('touchstart', startDrag);
+document.addEventListener('mousemove', updateDrag);
+document.addEventListener('touchmove', updateDrag);
+document.addEventListener('mouseup', stopDrag);
+document.addEventListener('touchend', stopDrag);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const interBubble = document.querySelector('.interactive');
+    let angle = 0;
+
+    function move() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const radiusX = Math.min(centerX, centerY) * 0.4;
+      const radiusY = Math.min(centerX, centerY) * 0.3;
+      const x = centerX + radiusX * Math.cos(angle);
+      const y = centerY + radiusY * Math.sin(angle);
+      interBubble.style.transform = `translate(${x}px, ${y}px)`;
+      angle += 0.02;
+      requestAnimationFrame(move);
+    }
+
+    move();
+  });
+    </script>
+  </body>
+</html>
