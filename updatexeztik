@@ -473,6 +473,7 @@
         justify-content: center;
         align-items: center;
         margin-bottom: 1rem;
+padding: 1rem;
       }
 
       .video-preview {
@@ -483,7 +484,6 @@
         background: #000;
         transition: transform 0.3s ease;
         aspect-ratio: var(--video-aspect-ratio);
-        margin: 20px;
       }
 
       .video-preview.portrait {
