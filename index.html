@@ -888,8 +888,26 @@
 
         function closeLightbox(e) {
             if (e && e.target.id !== 'lightbox' && e.target.id !== 'lb-close') return;
+            
+            // --- SINKRONISASI GALERI (TANPA DELAY) ---
+            const gallery = document.getElementById('image-gallery');
+            if (gallery && mediaData && mediaData.type === 'photo') {
+                // 1. Matikan smooth scroll CSS sementara
+                gallery.style.scrollBehavior = 'auto'; 
+                
+                // 2. Geser galeri secara instan
+                gallery.scrollLeft = currentLightboxIndex * gallery.clientWidth;
+                
+                // 3. Kembalikan smooth scroll setelah posisi aman
+                requestAnimationFrame(() => {
+                    gallery.style.scrollBehavior = 'smooth';
+                });
+            }
+            // -----------------------------------------
+
             const box = document.getElementById('lightbox');
             box.classList.remove('show');
+
             setTimeout(() => {
                 box.style.display = 'none';
                 resetZoom();
@@ -898,15 +916,28 @@
 
         function changeLightboxImage(direction) {
             if (!mediaData || !mediaData.images) return;
-            currentLightboxIndex += direction;
-            if (currentLightboxIndex < 0) currentLightboxIndex = mediaData.images.length - 1;
-            if (currentLightboxIndex >= mediaData.images.length) currentLightboxIndex = 0;
+            
+            let newIndex = currentLightboxIndex + direction;
+            
+            // Cegah index keluar batas (mematikan looping)
+            if (newIndex < 0 || newIndex >= mediaData.images.length) return;
+            
+            currentLightboxIndex = newIndex;
             updateLightboxImage();
         }
 
         function updateLightboxImage() {
             resetZoom();
             lbImg.src = mediaData.images[currentLightboxIndex];
+            
+            // Menyembunyikan tombol Prev/Next Lightbox jika sudah di ujung
+            const lbPrev = document.getElementById('lb-prev');
+            const lbNext = document.getElementById('lb-next');
+            
+            if (lbPrev && lbNext) {
+                lbPrev.style.display = currentLightboxIndex === 0 ? 'none' : 'flex';
+                lbNext.style.display = currentLightboxIndex === mediaData.images.length - 1 ? 'none' : 'flex';
+            }
         }
 
         function resetZoom() {
@@ -1166,8 +1197,9 @@
                     toggleVisibility('image-counter', true);
                     document.getElementById('image-counter').innerText = `1 / ${json.data.images.length}`;
                     
-                    toggleVisibility('prev-btn', true, 'flex');
-                    toggleVisibility('next-btn', true, 'flex');
+                    // Sembunyikan tombol Prev di awal, dan tampilkan tombol Next jika gambar > 1
+                    toggleVisibility('prev-btn', false);
+                    toggleVisibility('next-btn', json.data.images.length > 1, 'flex');
 
                     iconSlot1.innerHTML = SVG_PHOTO;
                     iconSlot2.innerHTML = SVG_LAYERS;
@@ -1348,13 +1380,20 @@
         document.getElementById('singleDlBtn').addEventListener('click', downloadSingle);
         document.getElementById('downloadAudioBtn').addEventListener('click', downloadAudio);
         
-        // Listener Scroll Galeri: Hanya perbarui teks label
+        // Listener Scroll Galeri: Perbarui teks label & sembunyikan tombol jika mentok
         document.getElementById('image-gallery').addEventListener('scroll', () => {
             if (!mediaData || mediaData.type !== 'photo') return;
             const gallery = document.getElementById('image-gallery');
             let index = Math.round(gallery.scrollLeft / gallery.clientWidth) + 1;
             
             document.getElementById('image-counter').innerText = `${index} / ${mediaData.images.length}`;
+
+            // Menyembunyikan tombol prev/next jika sudah mentok
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            prevBtn.style.display = index <= 1 ? 'none' : 'flex';
+            nextBtn.style.display = index >= mediaData.images.length ? 'none' : 'flex';
         });
 
         function downloadFileByBlob(url, filename, progressCallback, signal) {
