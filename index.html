@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok Downloader - by Xez</title>
+    
+    <link rel="icon" type="image/jpeg" href="https://i.ibb.co.com/xpW0FHH/Columbina.jpg">
+    <link rel="apple-touch-icon" href="https://i.ibb.co.com/xpW0FHH/Columbina.jpg">
+    
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7.7.3/dist/wavesurfer.min.js" defer></script>
     <style>
         :root {
             --bg-main: #050505; 
@@ -47,6 +51,7 @@
             width: 100%; max-width: 600px; height: 400px;
             background: linear-gradient(135deg, rgba(254,44,85,0.15), rgba(37,244,238,0.15));
             filter: blur(100px); z-index: -1; pointer-events: none; opacity: 0.7;
+            will-change: filter; /* [PERBAIKAN 13] Optimasi performa render */
         }
 
         .container {
@@ -93,6 +98,12 @@
             background: rgba(255, 255, 255, 0.02); 
         }
 
+        /* [TAMBAHAN 22] Visual Error State */
+        .url-input.error-state {
+            border-color: var(--brand-pink);
+            box-shadow: 0 0 0 4px rgba(254, 44, 85, 0.15), inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
         .input-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; }
 
         .paste-btn {
@@ -118,8 +129,11 @@
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: all 0.6s ease;
         }
-        .main-button:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(254, 44, 85, 0.5); }
-        .main-button:hover::after { left: 100%; }
+        .main-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(254, 44, 85, 0.5); }
+        .main-button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* [TAMBAHAN 20] State untuk membatalkan unduhan */
+        .main-button.cancel-mode { background: linear-gradient(135deg, #3f3f46, #27272a); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
 
         .preview-container { display: none; opacity: 0; animation: slideUp 0.5s ease forwards; }
         .preview-grid { 
@@ -178,11 +192,16 @@
         .action-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
 
         .caption-wrapper { position: relative; }
-        .caption-label { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 0.05em; }
+        .caption-label { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        /* [TAMBAHAN Custom] Label Caption Kosong */
+        .empty-caption-label { background: rgba(254, 44, 85, 0.1); color: var(--brand-pink); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: none; text-transform: none; letter-spacing: normal; }
+
+        /* [PERBAIKAN 21] Auto-resize textarea logic */
         .caption-textarea {
             width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); 
             padding: 16px; padding-right: 54px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; 
-            resize: none; min-height: 110px; line-height: 1.6; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            resize: none; min-height: 110px; max-height: 250px; overflow-y: auto; line-height: 1.6; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
         .caption-textarea:focus { outline: none; border-color: rgba(255,255,255,0.2); }
         .caption-textarea::-webkit-scrollbar { width: 6px; }
@@ -222,10 +241,11 @@
         }
         
         .btn-secondary { background: rgba(255,255,255,0.03); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: none; }
-        .btn-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
 
         .download-btn { position: relative; overflow: hidden; }
-        .progress-bar { position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: rgba(0,0,0,0.25); transition: width 0.2s ease; }
+        /* [PERBAIKAN 24] Transisi mulus untuk progress bar */
+        .progress-bar { position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: rgba(0,0,0,0.25); transition: width 0.4s ease-in-out; }
         .btn-content { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-content svg { flex-shrink: 0; }
 
@@ -317,12 +337,7 @@
         .play-btn svg { width: 20px; height: 20px; margin-left: 2px; flex-shrink: 0; } 
         
         .waveform-container { 
-            flex: 1; 
-            height: 44px; 
-            cursor: pointer; 
-            min-width: 0; 
-            overflow: hidden; /* Mencegah bocor/bug garis ganda saat dirender */
-            border-radius: 4px;
+            flex: 1; height: 44px; cursor: pointer; min-width: 0; overflow: hidden; border-radius: 4px;
         }
 
         .audio-time { 
@@ -370,7 +385,6 @@
             .input-icon { left: 1rem; }
             .container { padding: 1.5rem 1rem; }
             
-            /* --- PERBAIKAN AUDIO PLAYER DI MOBILE --- */
             .audio-dropdown-menu { padding: 0 16px 16px 16px; }
             .custom-audio-player { gap: 12px; padding: 10px 14px; border-radius: 16px; }
             .play-btn { width: 38px; height: 38px; }
@@ -386,7 +400,7 @@
     <div class="container">
         <div class="app-header">
             <h1 class="app-title">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -398,13 +412,13 @@
 
         <div class="input-group" id="search-section">
             <div class="input-wrapper">
-                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                 </svg>
-                <input type="text" class="url-input" id="url" placeholder="Tempel URL TikTok di sini..." autocomplete="off" oninput="updateInputBtn()">
-                <button class="paste-btn" id="paste-btn" onclick="handlePaste()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <input type="text" class="url-input" id="url" placeholder="Tempel URL TikTok di sini..." autocomplete="off">
+                <button class="paste-btn" id="paste-btn" aria-label="Tempel Teks">
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
                         <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                     </svg>
@@ -413,7 +427,7 @@
             </div>
         </div>
 
-        <button class="main-button" id="search-button" onclick="fetchVideoInfo()">
+        <button class="main-button" id="search-button">
             Cari Konten Sekarang
         </button>
 
@@ -425,13 +439,13 @@
             <div class="preview-grid">
                 
                 <div class="video-box" id="media-container">
-                    <button class="nav-btn prev-btn" id="prev-btn" onclick="slideGallery(-1)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <button class="nav-btn prev-btn" id="prev-btn" aria-label="Slide sebelumnya">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
-                    <button class="nav-btn next-btn" id="next-btn" onclick="slideGallery(1)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <button class="nav-btn next-btn" id="next-btn" aria-label="Slide selanjutnya">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </button>
@@ -447,8 +461,8 @@
                             <span class="creator-name" id="author-name">Nama Kreator</span>
                             <span class="creator-username" id="author-username">@username</span>
                         </div>
-                        <button class="action-btn" onclick="copyText('author-username')" title="Copy Username">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <button class="action-btn" id="copy-username-btn" title="Copy Username" aria-label="Salin Username">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                             </svg>
@@ -467,14 +481,14 @@
                             </div>
                             <div class="badge" id="size-badge" style="display: none;">
                                 <span class="badge-icon-slot">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                 </span>
                                 <span id="media-size">Ukuran: -</span>
                             </div>
                         </div>
                         
                         <div class="hd-warning" id="hd-warning">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="8" x2="12" y2="12"></line>
                                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -484,10 +498,10 @@
                     </div>
 
                     <div class="caption-wrapper">
-                        <span class="caption-label">Caption Postingan</span>
-                        <textarea id="caption" class="caption-textarea" readonly></textarea>
-                        <button class="action-btn copy-caption-btn" onclick="copyText('caption')" title="Copy Caption">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <span class="caption-label">Caption Postingan <span id="empty-caption-label" class="empty-caption-label">Caption Kosong</span></span>
+                        <textarea id="caption" class="caption-textarea" readonly aria-label="Teks Caption"></textarea>
+                        <button class="action-btn copy-caption-btn" id="copy-caption-btn" title="Copy Caption" aria-label="Salin Teks Caption">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                             </svg>
@@ -499,12 +513,12 @@
             <div class="single-photo-download" id="single-photo-download">
                 <div class="single-action-row">
                     <div class="number-input-group">
-                        <button class="num-btn" onclick="updatePhotoInput(-1)">-</button>
-                        <input type="number" id="photo-target" class="num-input" value="1" min="1" onchange="validatePhotoInput()">
-                        <button class="num-btn" onclick="updatePhotoInput(1)">+</button>
+                        <button class="num-btn" id="btn-minus-photo" aria-label="Kurangi Target Slide">-</button>
+                        <input type="number" id="photo-target" class="num-input" value="1" min="1" aria-label="Input Urutan Foto">
+                        <button class="num-btn" id="btn-plus-photo" aria-label="Tambah Target Slide">+</button>
                     </div>
-                    <button class="main-button btn-secondary single-dl-btn" id="singleDlBtn" onclick="downloadSingle()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button class="main-button btn-secondary single-dl-btn" id="singleDlBtn">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -516,30 +530,32 @@
             </div>
 
             <div class="action-container">
-                <button class="main-button download-btn" id="downloadBtn" onclick="startDownload()">
+                <button class="main-button download-btn" id="downloadBtn">
                     <div class="progress-bar" id="progressBar"></div>
                     <div class="btn-content" id="downloadText">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
+                        <span id="downloadBtnIcon">
+                            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </span>
                         <span id="downloadBtnLabel">Download File</span>
                     </div>
                 </button>
                 
                 <div class="dropdown-wrapper" id="audioDropdownWrapper">
                     <div class="split-btn-group">
-                        <button class="split-btn-main" id="downloadAudioBtn" onclick="downloadAudio()">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <button class="split-btn-main" id="downloadAudioBtn">
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M9 18V5l12-2v13"></path>
                                 <circle cx="6" cy="18" r="3"></circle>
                                 <circle cx="18" cy="16" r="3"></circle>
                             </svg>
                             Download Audio
                         </button>
-                        <button class="split-btn-trigger" id="audioDropdownTrigger" onclick="toggleAudioPlayer()" title="Preview Audio">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <button class="split-btn-trigger" id="audioDropdownTrigger" title="Preview Audio" aria-label="Buka Preview Audio">
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </button>
@@ -548,7 +564,7 @@
                     <div class="audio-dropdown-menu" id="audioDropdownMenu">
                         <div class="audio-label">
                             <div class="audio-label-left">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                                     <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                 </svg>
@@ -558,9 +574,9 @@
                         </div>
                         
                         <div class="custom-audio-player">
-                            <button id="play-pause-btn" class="play-btn">
-                                <svg viewBox="0 0 24 24" fill="currentColor" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
-                                <svg viewBox="0 0 24 24" fill="currentColor" id="pause-icon" style="display:none; margin-left:0;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            <button id="play-pause-btn" class="play-btn" aria-label="Play/Pause Audio">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" id="pause-icon" style="display:none; margin-left:0;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                             </button>
                             <div id="waveform" class="waveform-container"></div>
                             <div id="audio-time" class="audio-time">0:00</div>
@@ -568,8 +584,8 @@
                     </div>
                 </div>
 
-                <button class="main-button btn-secondary" onclick="resetForm()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="main-button btn-secondary" id="reset-btn">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                         <path d="M3 3v5h5"></path>
                     </svg>
@@ -588,14 +604,23 @@
         let mediaData = null;
         let isDownloading = false;
         let wavesurfer = null;
+        let isSearchRateLimited = false; // [PERBAIKAN 2] Control rate limit
+        let downloadController = null; // [PERBAIKAN 20] AbortController
 
-        const SVG_VIDEO = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`;
-        const SVG_CLOCK = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
-        const SVG_PHOTO = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`;
-        const SVG_LAYERS = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`;
+        const SVG_VIDEO = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`;
+        const SVG_CLOCK = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+        const SVG_PHOTO = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`;
+        const SVG_LAYERS = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`;
+        const SVG_PASTE = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Paste`;
+        const SVG_CLEAR = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Hapus`;
+        const SVG_CANCEL = `<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+        const SVG_DOWNLOAD_ICON = `<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
 
-        const SVG_PASTE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Paste`;
-        const SVG_CLEAR = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Hapus`;
+        // [PERBAIKAN 31] Helper Function
+        function toggleVisibility(id, show, displayType = 'block') {
+            const el = document.getElementById(id);
+            if (el) el.style.display = show ? displayType : 'none';
+        }
 
         function formatBytes(bytes, decimals = 2) {
             if (!+bytes) return '0 Bytes';
@@ -611,20 +636,19 @@
                 const response = await fetch(url, { method: 'HEAD' });
                 const size = response.headers.get('content-length');
                 return size ? formatBytes(size) : 'Unknown';
-            } catch (e) {
-                return 'Unknown';
-            }
+            } catch (e) { return 'Unknown'; }
         }
 
         function showToast(msg, isError = false) {
-            let toastBox = document.getElementById('toastBox');
-            let toast = document.createElement('div');
+            // [PERBAIKAN 8] Gunakan const
+            const toastBox = document.getElementById('toastBox');
+            const toast = document.createElement('div');
             toast.classList.add('toast');
             if (isError) toast.classList.add('error');
             
-            let icon = isError ? 
-                '<svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' : 
-                '<svg width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+            const icon = isError ? 
+                '<svg aria-hidden="true" width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' : 
+                '<svg aria-hidden="true" width="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
             
             toast.innerHTML = icon + msg;
             toastBox.appendChild(toast);
@@ -639,6 +663,9 @@
             const urlInput = document.getElementById('url');
             const btn = document.getElementById('paste-btn');
             
+            // Hapus status error jika user mulai mengetik ulang
+            urlInput.classList.remove('error-state');
+
             if (urlInput.value.trim().length > 0) {
                 btn.innerHTML = SVG_CLEAR;
                 btn.onclick = clearInput;
@@ -670,8 +697,8 @@
         }
 
         function copyText(id) {
-            let element = document.getElementById(id);
-            let text = element.tagName === 'TEXTAREA' ? element.value : element.innerText;
+            const element = document.getElementById(id);
+            const text = element.tagName === 'TEXTAREA' ? element.value : element.innerText;
             navigator.clipboard.writeText(text).then(() => {
                 showToast('Teks berhasil disalin!');
             });
@@ -686,17 +713,19 @@
 
         function slideGallery(direction) {
             const gallery = document.getElementById('image-gallery');
+            // [PERBAIKAN 30] Kalkulasi presisi native per gambar
             const scrollAmount = gallery.clientWidth; 
             gallery.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
         }
 
         function validatePhotoInput() {
             if (!mediaData || mediaData.type !== 'photo') return;
-            let input = document.getElementById('photo-target');
-            let max = mediaData.images.length;
-            let val = parseInt(input.value);
+            const input = document.getElementById('photo-target');
+            const max = mediaData.images.length;
+            // [PERBAIKAN 29] Fallback jika user mengosongkan input/NaN
+            let val = parseInt(input.value) || 1;
             
-            if (isNaN(val) || val < 1) val = 1;
+            if (val < 1) val = 1;
             if (val > max) val = max;
             
             input.value = val;
@@ -704,17 +733,12 @@
         }
 
         function updatePhotoInput(change) {
-            let input = document.getElementById('photo-target');
-            input.value = parseInt(input.value) + change;
+            const input = document.getElementById('photo-target');
+            // Tambah validasi sebelum kalkulasi
+            const current = parseInt(input.value) || 1;
+            input.value = current + change;
             validatePhotoInput(); 
         }
-
-        document.getElementById('image-gallery').addEventListener('scroll', () => {
-            if (!mediaData || mediaData.type !== 'photo') return;
-            const gallery = document.getElementById('image-gallery');
-            let index = Math.round(gallery.scrollLeft / gallery.clientWidth) + 1;
-            document.getElementById('image-counter').innerText = `${index} / ${mediaData.images.length}`;
-        });
 
         function toggleAudioPlayer() {
             if (!mediaData || !mediaData.music) {
@@ -734,23 +758,41 @@
             }
         }
 
-        document.getElementById('play-pause-btn').addEventListener('click', () => {
-            if (wavesurfer) wavesurfer.playPause();
-        });
-
         async function fetchVideoInfo() {
-            const urlInput = document.getElementById('url').value.trim();
-            if (!urlInput.includes('tiktok.com')) {
-                showToast('Harap masukkan URL TikTok yang valid!', true);
+            // [PERBAIKAN 2] Rate Limiting sederhana
+            if (isSearchRateLimited) {
+                showToast("Tunggu beberapa detik sebelum permintaan baru.", true);
                 return;
             }
 
-            document.getElementById('search-section').style.display = 'none';
-            document.getElementById('search-button').style.display = 'none';
-            document.getElementById('loader').style.display = 'flex';
+            const urlInput = document.getElementById('url');
+            const urlVal = urlInput.value.trim();
+            // [PERBAIKAN 3] Regex Validasi TikTok yang lebih ketat
+            const tiktokRegex = /https?:\/\/(?:www\.|vm\.|vt\.|m\.)?tiktok\.com\//i;
+            
+            if (!tiktokRegex.test(urlVal)) {
+                showToast('Harap masukkan URL TikTok yang valid!', true);
+                urlInput.classList.add('error-state'); // [TAMBAHAN 22] Visual error state
+                return;
+            }
+
+            isSearchRateLimited = true;
+            setTimeout(() => { isSearchRateLimited = false; }, 3000); // 3 detik delay reset
+
+            toggleVisibility('search-section', false, 'flex');
+            toggleVisibility('search-button', false, 'flex');
+            toggleVisibility('loader', true, 'flex');
 
             try {
-                const response = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(urlInput)}`);
+                // [PERBAIKAN 27] Implementasi AbortController Timeout (15 Detik max)
+                const fetchController = new AbortController();
+                const timeoutId = setTimeout(() => fetchController.abort(), 15000);
+
+                const response = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(urlVal)}`, {
+                    signal: fetchController.signal
+                });
+                clearTimeout(timeoutId);
+
                 const json = await response.json();
 
                 const isPhoto = json.data.images && json.data.images.length > 0;
@@ -763,42 +805,59 @@
                 
                 document.getElementById('author-name').innerText = json.data.author.nickname;
                 document.getElementById('author-username').innerText = `@${json.data.author.unique_id}`;
-                document.getElementById('caption').value = json.data.title || "Tidak ada caption.";
+                
+                // --- Logika Kustom Deteksi Caption Kosong ---
+                const captionText = json.data.title || "";
+                const captionEl = document.getElementById('caption');
+                if (captionText.trim() === "") {
+                    toggleVisibility('caption', false);
+                    toggleVisibility('copy-caption-btn', false);
+                    toggleVisibility('empty-caption-label', true, 'inline-block');
+                } else {
+                    captionEl.value = captionText;
+                    toggleVisibility('caption', true, 'block');
+                    toggleVisibility('copy-caption-btn', true, 'flex');
+                    toggleVisibility('empty-caption-label', false);
+                    // [PERBAIKAN 21] Auto Resize
+                    captionEl.style.height = 'auto';
+                    captionEl.style.height = captionEl.scrollHeight + 'px';
+                }
 
-                document.getElementById('size-badge').style.display = 'inline-flex';
+                toggleVisibility('size-badge', true, 'inline-flex');
                 document.getElementById('media-size').innerText = 'Menghitung...';
                 document.getElementById('audio-size').innerText = '';
 
                 if (isPhoto) {
                     mediaData = { type: 'photo', id: json.data.id, images: json.data.images, ext: 'jpeg' };
 
-                    document.getElementById('video-preview').style.display = 'none';
+                    toggleVisibility('video-preview', false);
                     const gallery = document.getElementById('image-gallery');
-                    gallery.style.display = 'flex';
+                    toggleVisibility('image-gallery', true, 'flex');
                     gallery.innerHTML = '';
                     
-                    json.data.images.forEach(imgUrl => {
+                    json.data.images.forEach((imgUrl, i) => {
                         let img = document.createElement('img');
                         img.src = imgUrl;
+                        img.alt = `TikTok Slide ${i + 1}`; // [PERBAIKAN 16] Teks Alternatif
                         gallery.appendChild(img);
                     });
                     
-                    document.getElementById('image-counter').style.display = 'block';
+                    toggleVisibility('image-counter', true);
                     document.getElementById('image-counter').innerText = `1 / ${json.data.images.length}`;
                     
-                    document.getElementById('prev-btn').style.display = 'flex';
-                    document.getElementById('next-btn').style.display = 'flex';
+                    toggleVisibility('prev-btn', true, 'flex');
+                    toggleVisibility('next-btn', true, 'flex');
 
                     iconSlot1.innerHTML = SVG_PHOTO;
                     iconSlot2.innerHTML = SVG_LAYERS;
                     document.getElementById('quality').innerText = 'Slide Foto';
                     document.getElementById('duration').innerText = `${json.data.images.length} Gambar`;
                     qualityBadge.classList.add('highlight');
-                    hdWarning.style.display = 'none';
+                    toggleVisibility('hd-warning', false);
                     
                     document.getElementById('downloadBtnLabel').innerText = 'Download Semua Foto';
                     
-                    document.getElementById('single-photo-download').style.display = 'flex';
+                    toggleVisibility('single-photo-download', true, 'flex');
                     document.getElementById('photo-target').setAttribute('max', json.data.images.length);
                     document.getElementById('photo-target').value = 1;
                     document.getElementById('target-label').innerText = 1;
@@ -814,15 +873,17 @@
                         quality: isHd ? 'HD Quality' : 'SD Quality', ext: 'mp4'
                     };
 
-                    document.getElementById('image-gallery').style.display = 'none';
-                    document.getElementById('image-counter').style.display = 'none';
-                    document.getElementById('prev-btn').style.display = 'none';
-                    document.getElementById('next-btn').style.display = 'none';
-                    document.getElementById('single-photo-download').style.display = 'none';
+                    toggleVisibility('image-gallery', false);
+                    toggleVisibility('image-counter', false);
+                    toggleVisibility('prev-btn', false);
+                    toggleVisibility('next-btn', false);
+                    toggleVisibility('single-photo-download', false);
 
                     const videoEl = document.getElementById('video-preview');
-                    videoEl.style.display = 'block';
+                    toggleVisibility('video-preview', true);
                     videoEl.src = mediaData.url;
+                    // [PERBAIKAN 26] Tambahkan poster visual video sebelum play
+                    if(json.data.cover || json.data.origin_cover) videoEl.poster = json.data.cover || json.data.origin_cover; 
 
                     iconSlot1.innerHTML = SVG_VIDEO;
                     iconSlot2.innerHTML = SVG_CLOCK;
@@ -832,10 +893,10 @@
 
                     if (isHd) {
                         qualityBadge.classList.add('highlight');
-                        hdWarning.style.display = 'none';
+                        toggleVisibility('hd-warning', false);
                     } else {
                         qualityBadge.classList.remove('highlight');
-                        hdWarning.style.display = 'flex';
+                        toggleVisibility('hd-warning', true, 'flex');
                     }
 
                     if (json.data.size) {
@@ -853,102 +914,102 @@
                 const audioWrapper = document.getElementById('audioDropdownWrapper');
                 
                 if (mediaData.music) {
-                    audioTrigger.style.opacity = '1';
-                    audioTrigger.style.pointerEvents = 'auto';
-                    audioBtn.style.opacity = '1';
-                    audioBtn.style.pointerEvents = 'auto';
+                    audioTrigger.style.opacity = '1'; audioTrigger.style.pointerEvents = 'auto';
+                    audioBtn.style.opacity = '1'; audioBtn.style.pointerEvents = 'auto';
                     audioWrapper.style.opacity = '1';
 
                     fetchFileSize(mediaData.music).then(size => {
-                        if (size !== 'Unknown') {
-                            document.getElementById('audio-size').innerText = `(${size})`;
-                        }
+                        if (size !== 'Unknown') document.getElementById('audio-size').innerText = `(${size})`;
                     });
 
-                    if (wavesurfer) {
-                        wavesurfer.destroy();
-                        wavesurfer = null;
-                    }
-                    
-                    // KOSONGKAN CONTAINER AGAR TIDAK ADA BUG GARIS GANDA
+                    if (wavesurfer) { wavesurfer.destroy(); wavesurfer = null; }
                     document.getElementById('waveform').innerHTML = '';
 
-                    // --- INISIALISASI WAVESURFER ---
                     wavesurfer = WaveSurfer.create({
-                        container: '#waveform',
-                        waveColor: 'rgba(255, 255, 255, 0.85)', // Warna dikembalikan menjadi putih terang
-                        progressColor: '#25F4EE', 
-                        cursorColor: '#ffffff', // Garis kursor warna putih
-                        cursorWidth: 2, 
-                        url: mediaData.music,
-                        height: 40,
-                        barWidth: 2.5,     
-                        barGap: 3,         
-                        barRadius: 2, 
-                        normalize: true, 
-                        minPxPerSec: 50, // Membuat gelombang memanjang ke samping
-                        autoScroll: true, // Otomatis bergeser menyamping saat dimainkan
-                        hideScrollbar: true, // Native WS menyembunyikan scrollbar tanpa merusak koordinat
-                        dragToSeek: true, // AKTIFKAN KEMBALI: Bisa digeser/seek dengan kursor
-                        interact: true 
+                        container: '#waveform', waveColor: 'rgba(255, 255, 255, 0.85)', progressColor: '#25F4EE', 
+                        cursorColor: '#ffffff', cursorWidth: 2, url: mediaData.music, height: 40,
+                        barWidth: 2.5, barGap: 3, barRadius: 2, normalize: true, minPxPerSec: 50, 
+                        autoScroll: true, hideScrollbar: true, dragToSeek: true, interact: true 
                     });
 
-                    // --- UPDATE WAKTU REALTIME ---
-                    const updateTime = () => {
-                        if (wavesurfer) {
-                            document.getElementById('audio-time').innerText = formatDuration(wavesurfer.getCurrentTime());
-                        }
-                    };
-                    
-                    wavesurfer.on('timeupdate', updateTime);   // Berubah saat dimainkan atau diklik
-                    wavesurfer.on('interaction', updateTime);  // Berubah saat digeser secara interaktif meski posisi pause
+                    const updateTime = () => { if (wavesurfer) document.getElementById('audio-time').innerText = formatDuration(wavesurfer.getCurrentTime()); };
+                    wavesurfer.on('timeupdate', updateTime);
+                    wavesurfer.on('interaction', updateTime);
 
-                    // --- PLAY/PAUSE ICON UI ---
-                    wavesurfer.on('play', () => {
-                        document.getElementById('play-icon').style.display = 'none';
-                        document.getElementById('pause-icon').style.display = 'block';
-                    });
-                    wavesurfer.on('pause', () => {
-                        document.getElementById('play-icon').style.display = 'block';
-                        document.getElementById('pause-icon').style.display = 'none';
-                    });
-                    wavesurfer.on('ready', () => {
-                        document.getElementById('audio-time').innerText = "0:00";
-                    });
+                    wavesurfer.on('play', () => { toggleVisibility('play-icon', false); toggleVisibility('pause-icon', true); });
+                    wavesurfer.on('pause', () => { toggleVisibility('play-icon', true); toggleVisibility('pause-icon', false); });
+                    wavesurfer.on('ready', () => { document.getElementById('audio-time').innerText = "0:00"; });
 
                 } else {
-                    audioTrigger.style.opacity = '0.3';
-                    audioTrigger.style.pointerEvents = 'none';
-                    audioBtn.style.opacity = '0.3';
-                    audioBtn.style.pointerEvents = 'none';
+                    audioTrigger.style.opacity = '0.3'; audioTrigger.style.pointerEvents = 'none';
+                    audioBtn.style.opacity = '0.3'; audioBtn.style.pointerEvents = 'none';
                     if (wavesurfer) {
-                        wavesurfer.destroy();
-                        wavesurfer = null;
+                        wavesurfer.destroy(); wavesurfer = null;
                         document.getElementById('waveform').innerHTML = '';
                         document.getElementById('audio-time').innerText = "0:00";
                     }
                 }
 
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('preview').style.display = 'block';
+                toggleVisibility('loader', false);
+                toggleVisibility('preview', true);
 
             } catch (error) {
-                showToast(error.message, true);
+                if (error.name === 'AbortError') showToast("Server TikTok tidak merespons (Timeout).", true);
+                else showToast(error.message, true);
                 resetForm();
             }
         }
 
-        function downloadFileByBlob(url, filename, progressCallback) {
+        // Event Listeners di-manage rapih di bawah (PERBAIKAN 6 / Pembersihan)
+        document.getElementById('url').addEventListener('input', updateInputBtn);
+        document.getElementById('search-button').addEventListener('click', fetchVideoInfo);
+        document.getElementById('copy-username-btn').addEventListener('click', () => copyText('author-username'));
+        document.getElementById('copy-caption-btn').addEventListener('click', () => copyText('caption'));
+        document.getElementById('btn-minus-photo').addEventListener('click', () => updatePhotoInput(-1));
+        document.getElementById('btn-plus-photo').addEventListener('click', () => updatePhotoInput(1));
+        document.getElementById('photo-target').addEventListener('change', validatePhotoInput);
+        document.getElementById('audioDropdownTrigger').addEventListener('click', toggleAudioPlayer);
+        document.getElementById('play-pause-btn').addEventListener('click', () => { if (wavesurfer) wavesurfer.playPause(); });
+        document.getElementById('reset-btn').addEventListener('click', resetForm);
+        document.getElementById('prev-btn').addEventListener('click', () => slideGallery(-1));
+        document.getElementById('next-btn').addEventListener('click', () => slideGallery(1));
+
+        // Handler tombol download utama dengan logika cancel
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (isDownloading) cancelDownload();
+            else startDownload();
+        });
+        document.getElementById('singleDlBtn').addEventListener('click', downloadSingle);
+        document.getElementById('downloadAudioBtn').addEventListener('click', downloadAudio);
+        
+        document.getElementById('image-gallery').addEventListener('scroll', () => {
+            if (!mediaData || mediaData.type !== 'photo') return;
+            const gallery = document.getElementById('image-gallery');
+            let index = Math.round(gallery.scrollLeft / gallery.clientWidth) + 1;
+            document.getElementById('image-counter').innerText = `${index} / ${mediaData.images.length}`;
+        });
+
+        // [PERBAIKAN 20] Download file Blob dilengkapi pengaitan AbortSignal
+        function downloadFileByBlob(url, filename, progressCallback, signal) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
                 xhr.responseType = 'blob';
+                
                 xhr.onprogress = (e) => {
                     if (e.lengthComputable && progressCallback) {
                         let percent = Math.round((e.loaded / e.total) * 100);
                         progressCallback(percent);
                     }
                 };
+                
+                if (signal) {
+                    signal.addEventListener('abort', () => {
+                        xhr.abort();
+                        reject(new Error('Download dibatalkan'));
+                    });
+                }
+
                 xhr.onload = () => {
                     if (xhr.status === 200) {
                         const blobUrl = window.URL.createObjectURL(xhr.response);
@@ -957,7 +1018,8 @@
                         a.download = filename;
                         document.body.appendChild(a);
                         a.click();
-                        window.URL.revokeObjectURL(blobUrl);
+                        // [PERBAIKAN 14] Memory Leak Clearance - Blob langsung dihapus setelah dipakai.
+                        window.URL.revokeObjectURL(blobUrl); 
                         a.remove();
                         resolve();
                     } else {
@@ -972,34 +1034,64 @@
 
         async function startDownload() {
             if (isDownloading || !mediaData) return;
+            
+            // [PERBAIKAN 25] Pause video jika sedang terputar
+            const vidEl = document.getElementById('video-preview');
+            if (mediaData.type === 'video' && !vidEl.paused) vidEl.pause();
+
             isDownloading = true;
+            downloadController = new AbortController();
 
             const btnLabel = document.getElementById('downloadBtnLabel');
+            const btnIcon = document.getElementById('downloadBtnIcon');
+            const mainBtn = document.getElementById('downloadBtn');
             const progress = document.getElementById('progressBar');
             
-            if (mediaData.type === 'video') {
-                btnLabel.innerText = 'Mengunduh... 0%';
-                
-                await downloadFileByBlob(mediaData.url, `Xeztik_${mediaData.id}.${mediaData.ext}`, (percent) => {
-                    progress.style.width = percent + '%';
-                    btnLabel.innerText = `Mengunduh... ${percent}%`;
-                });
-                showToast('Video berhasil diunduh!');
-            } 
-            else if (mediaData.type === 'photo') {
-                const totalPhotos = mediaData.images.length;
-                for (let i = 0; i < totalPhotos; i++) {
-                    btnLabel.innerText = `Mengunduh Foto ${i+1} dari ${totalPhotos}...`;
-                    progress.style.width = Math.round(((i) / totalPhotos) * 100) + '%';
-                    
-                    await downloadFileByBlob(mediaData.images[i], `Xeztik_${mediaData.id}_Slide${i+1}.${mediaData.ext}`, null);
-                    await new Promise(r => setTimeout(r, 500)); 
-                }
-                progress.style.width = '100%';
-                showToast('Semua foto berhasil diunduh!');
-            }
+            mainBtn.classList.add('cancel-mode');
+            btnIcon.innerHTML = SVG_CANCEL;
 
+            try {
+                if (mediaData.type === 'video') {
+                    btnLabel.innerText = 'Mengunduh... 0%';
+                    await downloadFileByBlob(mediaData.url, `Xeztik_${mediaData.id}.${mediaData.ext}`, (percent) => {
+                        progress.style.width = percent + '%';
+                        btnLabel.innerText = `Mengunduh... ${percent}%`;
+                    }, downloadController.signal);
+                    
+                    showToast('Video berhasil diunduh!');
+                } 
+                else if (mediaData.type === 'photo') {
+                    const totalPhotos = mediaData.images.length;
+                    const chunkSize = 3; // [PERBAIKAN 12] Batas konkurensi (3 file per iterasi)
+                    let completed = 0;
+
+                    for (let i = 0; i < totalPhotos; i += chunkSize) {
+                        const chunk = mediaData.images.slice(i, i + chunkSize);
+                        await Promise.all(chunk.map(async (imgUrl, index) => {
+                            const globalIndex = i + index;
+                            await downloadFileByBlob(imgUrl, `Xeztik_${mediaData.id}_Slide${globalIndex+1}.${mediaData.ext}`, null, downloadController.signal);
+                            completed++;
+                            let percent = Math.round((completed / totalPhotos) * 100);
+                            progress.style.width = percent + '%';
+                            btnLabel.innerText = `Unduh (${completed}/${totalPhotos}) - ${percent}%`;
+                        }));
+                        await new Promise(r => setTimeout(r, 300)); // Jedah bernapas singkat antar chunk
+                    }
+                    progress.style.width = '100%';
+                    showToast('Semua foto berhasil diunduh!');
+                }
+            } catch (err) {
+                if (err.message !== 'Download dibatalkan') showToast('Terjadi kesalahan saat mengunduh', true);
+            } finally {
+                resetDownloadBtn();
+            }
+        }
+
+        // [TAMBAHAN 20] Logika batal
+        function cancelDownload() {
+            if(downloadController) downloadController.abort();
             resetDownloadBtn();
+            showToast("Unduhan dibatalkan.", true);
         }
 
         async function downloadSingle() {
@@ -1010,33 +1102,30 @@
             let originalContent = targetBtn.innerHTML;
             
             targetBtn.innerHTML = 'Mengunduh...';
-            targetBtn.style.opacity = '0.7';
-            targetBtn.style.pointerEvents = 'none';
+            targetBtn.disabled = true;
             isDownloading = true;
             
-            await downloadFileByBlob(mediaData.images[index], `Xeztik_${mediaData.id}_Slide${index+1}.${mediaData.ext}`, null);
-            
-            showToast(`Foto ke-${index+1} berhasil diunduh!`);
-            
-            targetBtn.innerHTML = originalContent;
-            targetBtn.style.opacity = '1';
-            targetBtn.style.pointerEvents = 'auto';
-            isDownloading = false;
+            try {
+                await downloadFileByBlob(mediaData.images[index], `Xeztik_${mediaData.id}_Slide${index+1}.${mediaData.ext}`, null);
+                showToast(`Foto ke-${index+1} berhasil diunduh!`);
+            } catch (e) {
+                showToast("Gagal mengunduh foto.", true);
+            } finally {
+                targetBtn.innerHTML = originalContent;
+                targetBtn.disabled = false;
+                isDownloading = false;
+            }
         }
 
         async function downloadAudio() {
             if (isDownloading || !mediaData) return;
-            if (!mediaData.music) {
-                showToast('Audio tidak tersedia untuk postingan ini.', true);
-                return;
-            }
+            if (!mediaData.music) { showToast('Audio tidak tersedia.', true); return; }
             
             let targetBtn = document.getElementById('downloadAudioBtn');
             let originalContent = targetBtn.innerHTML;
             
             targetBtn.innerHTML = 'Mengunduh...';
-            targetBtn.style.opacity = '0.7';
-            targetBtn.style.pointerEvents = 'none';
+            targetBtn.disabled = true;
             isDownloading = true;
             
             try {
@@ -1044,49 +1133,56 @@
                 showToast('Audio berhasil diunduh!');
             } catch (e) {
                 showToast('Gagal mengunduh audio.', true);
+            } finally {
+                targetBtn.innerHTML = originalContent;
+                targetBtn.disabled = false;
+                isDownloading = false;
             }
-            
-            targetBtn.innerHTML = originalContent;
-            targetBtn.style.opacity = '1';
-            targetBtn.style.pointerEvents = 'auto';
-            isDownloading = false;
         }
 
         function resetDownloadBtn() {
             isDownloading = false;
             document.getElementById('progressBar').style.width = '0%';
             document.getElementById('downloadBtnLabel').innerText = mediaData && mediaData.type === 'photo' ? 'Download Semua Foto' : 'Download Video';
+            document.getElementById('downloadBtnIcon').innerHTML = SVG_DOWNLOAD_ICON;
+            document.getElementById('downloadBtn').classList.remove('cancel-mode');
         }
 
         function resetForm() {
+            // Jika dalam kondisi reset saat download jalan, batalkan
+            if(isDownloading && downloadController) downloadController.abort();
+
             document.getElementById('url').value = '';
-            document.getElementById('preview').style.display = 'none';
-            document.getElementById('video-preview').pause();
-            document.getElementById('video-preview').src = '';
+            toggleVisibility('preview', false);
+            
+            const vidPreview = document.getElementById('video-preview');
+            vidPreview.pause();
+            vidPreview.src = '';
+            vidPreview.removeAttribute('poster'); // clear poster
+            
             document.getElementById('image-gallery').innerHTML = '';
-            document.getElementById('prev-btn').style.display = 'none';
-            document.getElementById('next-btn').style.display = 'none';
-            document.getElementById('single-photo-download').style.display = 'none';
-            document.getElementById('size-badge').style.display = 'none';
+            toggleVisibility('prev-btn', false);
+            toggleVisibility('next-btn', false);
+            toggleVisibility('single-photo-download', false);
+            toggleVisibility('size-badge', false);
             
             document.getElementById('audioDropdownWrapper').classList.remove('open');
             document.getElementById('audioDropdownMenu').classList.remove('show');
             document.getElementById('audioDropdownTrigger').classList.remove('active');
             
             if (wavesurfer) {
-                wavesurfer.destroy();
-                wavesurfer = null;
+                wavesurfer.destroy(); wavesurfer = null;
                 document.getElementById('waveform').innerHTML = '';
                 document.getElementById('audio-time').innerText = "0:00";
-                document.getElementById('play-icon').style.display = 'block';
-                document.getElementById('pause-icon').style.display = 'none';
+                toggleVisibility('play-icon', true);
+                toggleVisibility('pause-icon', false);
             }
             
-            document.getElementById('search-section').style.display = 'flex';
-            document.getElementById('search-button').style.display = 'flex';
-            document.getElementById('loader').style.display = 'none';
+            toggleVisibility('search-section', true, 'flex');
+            toggleVisibility('search-button', true, 'flex');
+            toggleVisibility('loader', false);
             mediaData = null;
-            
+            resetDownloadBtn();
             updateInputBtn();
         }
     </script>
