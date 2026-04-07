@@ -4,12 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok Downloader - by Xez</title>
-    
+
+    <meta name="description" content="Unduh Video & Foto TikTok tanpa watermark dengan kualitas HD secara gratis melalui Xeztik.">
+    <meta property="og:title" content="Xeztik - TikTok Downloader">
+    <meta property="og:description" content="Unduh konten TikTok favoritmu tanpa watermark. Cepat, gratis, dan kualitas original.">
+    <meta property="og:image" content="https://i.ibb.co.com/xpW0FHH/Columbina.jpg">
+    <meta property="og:url" content="https://xez0.github.io/xeztik/">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://xez0.github.io/xeztik/">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#050505">
+    <link rel="manifest" href="manifest.json">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Xeztik TikTok Downloader",
+      "operatingSystem": "Web",
+      "applicationCategory": "MultimediaApplication",
+      "offers": { "@type": "Offer", "price": "0" }
+    }
+    </script>
+
     <link rel="icon" type="image/jpeg" href="https://i.ibb.co.com/xpW0FHH/Columbina.jpg">
     <link rel="apple-touch-icon" href="https://i.ibb.co.com/xpW0FHH/Columbina.jpg">
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/wavesurfer.js@7.7.3/dist/wavesurfer.min.js" defer></script>
+    
     <style>
         :root {
             --bg-main: #050505; 
@@ -25,7 +50,7 @@
             --radius-xl: 28px;
             --radius-lg: 18px;
             --radius-md: 12px;
-            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -46,12 +71,29 @@
             line-height: 1.6;
         }
 
+        .offline-banner {
+            position: fixed; top: 0; left: 0; width: 100%; background: var(--brand-pink);
+            color: white; text-align: center; padding: 10px; font-weight: 700; font-size: 0.95rem;
+            z-index: 10000; transform: translateY(-100%); transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(254, 44, 85, 0.4);
+        }
+        .offline-banner.active { transform: translateY(0); }
+
+        #lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
+            z-index: 20000; display: none; justify-content: center; align-items: center; cursor: zoom-out;
+            backdrop-filter: blur(10px); opacity: 0; transition: opacity 0.4s ease;
+        }
+        #lightbox.show { opacity: 1; }
+        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.4s ease; }
+        #lightbox.show img { transform: scale(1); }
+
         .glow-effect {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             width: 100%; max-width: 600px; height: 400px;
             background: linear-gradient(135deg, rgba(254,44,85,0.15), rgba(37,244,238,0.15));
             filter: blur(100px); z-index: -1; pointer-events: none; opacity: 0.7;
-            will-change: filter; /* [PERBAIKAN 13] Optimasi performa render */
+            will-change: filter;
         }
 
         .container {
@@ -98,7 +140,6 @@
             background: rgba(255, 255, 255, 0.02); 
         }
 
-        /* [TAMBAHAN 22] Visual Error State */
         .url-input.error-state {
             border-color: var(--brand-pink);
             box-shadow: 0 0 0 4px rgba(254, 44, 85, 0.15), inset 0 2px 4px rgba(0,0,0,0.1);
@@ -130,9 +171,8 @@
             transition: all 0.6s ease;
         }
         .main-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(254, 44, 85, 0.5); }
+        .main-button:hover:not(:disabled)::after { left: 100%; }
         .main-button:disabled { opacity: 0.7; cursor: not-allowed; }
-
-        /* [TAMBAHAN 20] State untuk membatalkan unduhan */
         .main-button.cancel-mode { background: linear-gradient(135deg, #3f3f46, #27272a); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
 
         .preview-container { display: none; opacity: 0; animation: slideUp 0.5s ease forwards; }
@@ -156,7 +196,7 @@
             scroll-behavior: smooth; display: none; -ms-overflow-style: none; scrollbar-width: none; 
         }
         .image-gallery::-webkit-scrollbar { display: none; }
-        .image-gallery img { width: 100%; height: 100%; object-fit: contain; scroll-snap-align: start; flex: 0 0 100%; }
+        .image-gallery img { width: 100%; height: 100%; object-fit: contain; scroll-snap-align: start; flex: 0 0 100%; cursor: zoom-in; }
         
         .image-counter {
             position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
@@ -178,26 +218,46 @@
         .next-btn { right: 12px; }
 
         .info-box { display: flex; flex-direction: column; gap: 24px; }
+        
         .creator-card { 
-            display: flex; align-items: center; justify-content: space-between; 
+            display: flex; align-items: center; gap: 14px; 
             background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); 
-            padding: 16px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color); 
+            padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-color); 
         }
-        .creator-info { display: flex; flex-direction: column; gap: 4px; }
-        .creator-name { font-weight: 800; font-size: 1.15rem; color: var(--text-primary); letter-spacing: -0.01em; }
-        .creator-username { color: var(--brand-cyan); font-weight: 600; font-size: 0.95rem; }
+        .creator-avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--border-color); object-fit: cover; }
+        .creator-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+        .creator-name { font-weight: 800; font-size: 1.05rem; color: var(--text-primary); letter-spacing: -0.01em; }
+        .creator-username { color: var(--brand-cyan); font-weight: 600; font-size: 0.85rem; }
 
-        .action-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius-md); background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border-color); cursor: pointer; transition: var(--transition); }
+        .action-btn { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: var(--radius-md); background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border-color); cursor: pointer; transition: var(--transition); flex-shrink: 0;}
         .action-btn svg { width: 20px; height: 20px; stroke-width: 2; flex-shrink: 0; }
         .action-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
 
+        .creator-menu-wrapper { position: relative; display: flex; }
+        .creator-dropdown {
+            position: absolute; right: 0; top: calc(100% + 8px);
+            background: rgba(18, 18, 20, 0.95); backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color); border-radius: var(--radius-md);
+            padding: 8px; display: flex; flex-direction: column; gap: 4px;
+            min-width: 210px; box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+            opacity: 0; transform: translateY(-10px) scale(0.95); pointer-events: none;
+            transition: var(--transition); z-index: 100; transform-origin: top right;
+        }
+        .creator-dropdown.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .creator-dropdown button {
+            background: transparent; border: none; color: var(--text-primary);
+            text-align: left; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem;
+            font-family: inherit; font-weight: 600; cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .creator-dropdown button svg { flex-shrink: 0; color: var(--text-secondary); transition: var(--transition); }
+        .creator-dropdown button:hover { background: rgba(255,255,255,0.08); color: var(--brand-cyan); }
+        .creator-dropdown button:hover svg { color: var(--brand-cyan); }
+
         .caption-wrapper { position: relative; }
         .caption-label { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: 0.05em; }
-        
-        /* [TAMBAHAN Custom] Label Caption Kosong */
         .empty-caption-label { background: rgba(254, 44, 85, 0.1); color: var(--brand-pink); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: none; text-transform: none; letter-spacing: normal; }
 
-        /* [PERBAIKAN 21] Auto-resize textarea logic */
         .caption-textarea {
             width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); 
             padding: 16px; padding-right: 54px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; 
@@ -222,7 +282,6 @@
         }
         .badge svg { flex-shrink: 0; }
         .badge.highlight { background: rgba(37, 244, 238, 0.08); border-color: rgba(37, 244, 238, 0.2); color: var(--brand-cyan); }
-        
         .badge-icon-slot { display: flex; align-items: center; justify-content: center; color: inherit; }
 
         .hd-warning { 
@@ -233,18 +292,12 @@
         }
         .hd-warning svg { flex-shrink: 0; }
 
-        .action-container { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 16px; 
-            width: 100%; 
-        }
+        .action-container { display: flex; flex-direction: column; gap: 16px; width: 100%; }
         
         .btn-secondary { background: rgba(255,255,255,0.03); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: none; }
         .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
 
         .download-btn { position: relative; overflow: hidden; }
-        /* [PERBAIKAN 24] Transisi mulus untuk progress bar */
         .progress-bar { position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: rgba(0,0,0,0.25); transition: width 0.4s ease-in-out; }
         .btn-content { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-content svg { flex-shrink: 0; }
@@ -274,7 +327,24 @@
             font-family: inherit; -moz-appearance: textfield; outline: none;
         }
         .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .single-dl-btn { flex: 1; font-size: 1.05rem; }
+        
+        /* Layout Fix Anti Glitch (Satu Baris) */
+        .single-dl-btn { 
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
+            white-space: nowrap; 
+        }
+        .single-dl-size { 
+            color: var(--brand-cyan); 
+            font-weight: 700; 
+            font-size: 0.95rem; 
+            display: inline-block; 
+            min-width: 80px; 
+            text-align: left; 
+        }
 
         .dropdown-wrapper { 
             position: relative; width: 100%; display: flex; flex-direction: column;
@@ -319,6 +389,18 @@
         .audio-label svg { color: var(--brand-cyan); flex-shrink: 0; }
         .audio-size { color: var(--brand-cyan); font-family: 'Courier New', Courier, monospace; letter-spacing: 0; }
 
+        .audio-placeholder {
+            width: 100%; height: 78px; background: rgba(255,255,255,0.03); border-radius: var(--radius-lg);
+            position: relative; overflow: hidden; display: none; margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+        }
+        .audio-placeholder::after {
+            content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 100% { left: 100%; } }
+
         .custom-audio-player {
             display: flex; align-items: center; gap: 20px;
             background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
@@ -336,20 +418,13 @@
         .play-btn:hover { transform: scale(1.08) translateY(-2px); box-shadow: 0 12px 20px -4px rgba(254, 44, 85, 0.6); }
         .play-btn svg { width: 20px; height: 20px; margin-left: 2px; flex-shrink: 0; } 
         
-        .waveform-container { 
-            flex: 1; height: 44px; cursor: pointer; min-width: 0; overflow: hidden; border-radius: 4px;
-        }
-
+        .waveform-container { flex: 1; height: 44px; cursor: pointer; min-width: 0; overflow: hidden; border-radius: 4px; }
         .audio-time { 
             font-size: 0.85rem; font-weight: 700; color: var(--brand-cyan); 
-            width: 45px; text-align: right; flex-shrink: 0;
-            font-family: 'Courier New', Courier, monospace; letter-spacing: -0.5px;
+            width: 45px; text-align: right; flex-shrink: 0; font-family: 'Courier New', Courier, monospace; letter-spacing: -0.5px;
         }
 
-        @keyframes slideDownInCard { 
-            from { opacity: 0; transform: translateY(-10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
+        @keyframes slideDownInCard { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         .loader-container { display: none; justify-content: center; padding: 3rem 0; }
         .spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--brand-pink); border-right-color: var(--brand-cyan); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; }
@@ -364,10 +439,7 @@
         @keyframes toastEnter { 0% { transform: translateY(50px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
         @keyframes toastLeave { to { transform: translateY(50px) scale(0.9); opacity: 0; } }
 
-        @media (max-width: 992px) {
-            .preview-grid { grid-template-columns: 1fr; gap: 20px; }
-        }
-
+        @media (max-width: 992px) { .preview-grid { grid-template-columns: 1fr; gap: 20px; } }
         @media (max-width: 768px) {
             .container { padding: 2rem 1.5rem; border-radius: var(--radius-lg); }
             .video-box { min-height: 300px; height: 400px; }
@@ -375,7 +447,6 @@
             .single-action-row { flex-direction: column; }
             .number-input-group { width: 100%; height: 54px; }
         }
-
         @media (max-width: 480px) {
             body { padding: 16px; }
             .app-title { font-size: 1.75rem; }
@@ -384,7 +455,6 @@
             .paste-btn { padding: 8px 12px; font-size: 0.85rem; }
             .input-icon { left: 1rem; }
             .container { padding: 1.5rem 1rem; }
-            
             .audio-dropdown-menu { padding: 0 16px 16px 16px; }
             .custom-audio-player { gap: 12px; padding: 10px 14px; border-radius: 16px; }
             .play-btn { width: 38px; height: 38px; }
@@ -395,6 +465,8 @@
     </style>
 </head>
 <body>
+    <div id="offline-banner" class="offline-banner">Koneksi internet terputus. Beberapa fitur mungkin tidak berfungsi.</div>
+    <div id="lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt="Zoomed View"></div>
     <div class="glow-effect"></div>
     
     <div class="container">
@@ -457,16 +529,32 @@
                 
                 <div class="info-box">
                     <div class="creator-card">
+                        <img id="author-avatar" class="creator-avatar" src="" alt="Creator Avatar">
                         <div class="creator-info">
                             <span class="creator-name" id="author-name">Nama Kreator</span>
                             <span class="creator-username" id="author-username">@username</span>
                         </div>
-                        <button class="action-btn" id="copy-username-btn" title="Copy Username" aria-label="Salin Username">
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                        </button>
+                        
+                        <div class="creator-menu-wrapper">
+                            <button class="action-btn" id="creator-menu-btn" title="Opsi Kreator" aria-label="Menu Kreator">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="1.5"></circle>
+                                    <circle cx="12" cy="5" r="1.5"></circle>
+                                    <circle cx="12" cy="19" r="1.5"></circle>
+                                </svg>
+                            </button>
+                            <div class="creator-dropdown" id="creator-dropdown">
+                                <button id="copy-user-btn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy Username
+                                </button>
+                                <button id="copy-nick-btn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Copy Nickname
+                                </button>
+                                <button id="dl-avatar-btn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download Foto Profile
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="badges-wrapper">
@@ -517,13 +605,14 @@
                         <input type="number" id="photo-target" class="num-input" value="1" min="1" aria-label="Input Urutan Foto">
                         <button class="num-btn" id="btn-plus-photo" aria-label="Tambah Target Slide">+</button>
                     </div>
+                    
                     <button class="main-button btn-secondary single-dl-btn" id="singleDlBtn">
                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        Unduh Foto ke-<span id="target-label">1</span>
+                        <span>Unduh Foto ke-<span id="target-label">1</span> <span class="single-dl-size" id="single-photo-size"></span></span>
                     </button>
                 </div>
                 <div class="divider"><span>Atau</span></div>
@@ -544,6 +633,7 @@
                     </div>
                 </button>
                 
+                <div id="audio-placeholder" class="audio-placeholder"></div>
                 <div class="dropdown-wrapper" id="audioDropdownWrapper">
                     <div class="split-btn-group">
                         <button class="split-btn-main" id="downloadAudioBtn">
@@ -604,8 +694,10 @@
         let mediaData = null;
         let isDownloading = false;
         let wavesurfer = null;
-        let isSearchRateLimited = false; // [PERBAIKAN 2] Control rate limit
-        let downloadController = null; // [PERBAIKAN 20] AbortController
+        let isSearchRateLimited = false; 
+        let downloadController = null;
+        let photoSizeCache = []; // Cache disetel jadi array
+        let scrollTimeout = null; // Tambahan untuk debounce scroll
 
         const SVG_VIDEO = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`;
         const SVG_CLOCK = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
@@ -616,10 +708,16 @@
         const SVG_CANCEL = `<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
         const SVG_DOWNLOAD_ICON = `<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
 
-        // [PERBAIKAN 31] Helper Function
         function toggleVisibility(id, show, displayType = 'block') {
             const el = document.getElementById(id);
             if (el) el.style.display = show ? displayType : 'none';
+        }
+
+        function sanitizeURL(url) {
+            try {
+                let cleanUrl = url.trim().split(/[?#]/)[0];
+                return cleanUrl.replace(/[^\x20-\x7E]/g, ""); 
+            } catch (e) { return url; }
         }
 
         function formatBytes(bytes, decimals = 2) {
@@ -640,7 +738,6 @@
         }
 
         function showToast(msg, isError = false) {
-            // [PERBAIKAN 8] Gunakan const
             const toastBox = document.getElementById('toastBox');
             const toast = document.createElement('div');
             toast.classList.add('toast');
@@ -654,7 +751,7 @@
             toastBox.appendChild(toast);
 
             setTimeout(() => {
-                toast.style.animation = 'toastLeave 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+                toast.style.animation = 'toastLeave 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards';
                 setTimeout(() => toast.remove(), 500);
             }, 3000);
         }
@@ -663,7 +760,6 @@
             const urlInput = document.getElementById('url');
             const btn = document.getElementById('paste-btn');
             
-            // Hapus status error jika user mulai mengetik ulang
             urlInput.classList.remove('error-state');
 
             if (urlInput.value.trim().length > 0) {
@@ -696,12 +792,33 @@
             }
         }
 
-        function copyText(id) {
-            const element = document.getElementById(id);
-            const text = element.tagName === 'TEXTAREA' ? element.value : element.innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('Teks berhasil disalin!');
-            });
+        // FUNGSI COPY 100% WORKS (Dilengkapi execCommand Fallback)
+        function copyFallback(text, labelName) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; 
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast(`${labelName} berhasil disalin!`);
+            } catch (err) {
+                showToast(`Gagal menyalin ${labelName}`, true);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function copyTextDirect(elementId, labelName) {
+            const text = document.getElementById(elementId).innerText;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast(`${labelName} berhasil disalin!`);
+                }).catch(() => copyFallback(text, labelName));
+            } else {
+                copyFallback(text, labelName);
+            }
+            document.getElementById('creator-dropdown').classList.remove('show');
         }
 
         function formatDuration(seconds) {
@@ -713,16 +830,25 @@
 
         function slideGallery(direction) {
             const gallery = document.getElementById('image-gallery');
-            // [PERBAIKAN 30] Kalkulasi presisi native per gambar
             const scrollAmount = gallery.clientWidth; 
             gallery.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
         }
 
-        function validatePhotoInput() {
+        // Tampilkan size hanya dari cache, hindari layout shifting & glitch
+        function updateSinglePhotoSizeUI(index) {
+            const sizeLabel = document.getElementById('single-photo-size');
+            const cachedSize = photoSizeCache[index - 1];
+            if (cachedSize) {
+                sizeLabel.innerText = `(~${cachedSize})`;
+            } else {
+                sizeLabel.innerText = '';
+            }
+        }
+
+        function validatePhotoInput(isManualEdit = false) {
             if (!mediaData || mediaData.type !== 'photo') return;
             const input = document.getElementById('photo-target');
             const max = mediaData.images.length;
-            // [PERBAIKAN 29] Fallback jika user mengosongkan input/NaN
             let val = parseInt(input.value) || 1;
             
             if (val < 1) val = 1;
@@ -730,14 +856,19 @@
             
             input.value = val;
             document.getElementById('target-label').innerText = val;
+            updateSinglePhotoSizeUI(val);
+
+            if(isManualEdit) {
+                const gallery = document.getElementById('image-gallery');
+                gallery.scrollTo({ left: (val - 1) * gallery.clientWidth, behavior: 'smooth' });
+            }
         }
 
         function updatePhotoInput(change) {
             const input = document.getElementById('photo-target');
-            // Tambah validasi sebelum kalkulasi
             const current = parseInt(input.value) || 1;
             input.value = current + change;
-            validatePhotoInput(); 
+            validatePhotoInput(true); 
         }
 
         function toggleAudioPlayer() {
@@ -758,33 +889,69 @@
             }
         }
 
+        document.getElementById('creator-menu-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('creator-dropdown').classList.toggle('show');
+        });
+        
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('creator-dropdown');
+            if(dropdown && dropdown.classList.contains('show') && !e.target.closest('.creator-menu-wrapper')) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Event Listener khusus tombol Copy di Dropdown (Mencegah masalah event mati)
+        document.getElementById('copy-user-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyTextDirect('author-username', 'Username');
+        });
+        document.getElementById('copy-nick-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyTextDirect('author-name', 'Nickname');
+        });
+        document.getElementById('dl-avatar-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadAvatar();
+        });
+
+        async function downloadAvatar() {
+            if(!mediaData || !mediaData.authorAvatar) return;
+            showToast("Mengunduh Foto Profil...");
+            document.getElementById('creator-dropdown').classList.remove('show');
+            await downloadFileByBlob(mediaData.authorAvatar, `Xeztik_Avatar_${mediaData.authorUsername}.jpeg`, null);
+        }
+
+        function closeLightbox() {
+            const box = document.getElementById('lightbox');
+            box.classList.remove('show');
+            setTimeout(() => box.style.display = 'none', 400); 
+        }
+
         async function fetchVideoInfo() {
-            // [PERBAIKAN 2] Rate Limiting sederhana
             if (isSearchRateLimited) {
                 showToast("Tunggu beberapa detik sebelum permintaan baru.", true);
                 return;
             }
 
             const urlInput = document.getElementById('url');
-            const urlVal = urlInput.value.trim();
-            // [PERBAIKAN 3] Regex Validasi TikTok yang lebih ketat
+            const urlVal = sanitizeURL(urlInput.value);
             const tiktokRegex = /https?:\/\/(?:www\.|vm\.|vt\.|m\.)?tiktok\.com\//i;
             
             if (!tiktokRegex.test(urlVal)) {
                 showToast('Harap masukkan URL TikTok yang valid!', true);
-                urlInput.classList.add('error-state'); // [TAMBAHAN 22] Visual error state
+                urlInput.classList.add('error-state'); 
                 return;
             }
 
             isSearchRateLimited = true;
-            setTimeout(() => { isSearchRateLimited = false; }, 3000); // 3 detik delay reset
+            setTimeout(() => { isSearchRateLimited = false; }, 3000);
 
             toggleVisibility('search-section', false, 'flex');
             toggleVisibility('search-button', false, 'flex');
             toggleVisibility('loader', true, 'flex');
 
             try {
-                // [PERBAIKAN 27] Implementasi AbortController Timeout (15 Detik max)
                 const fetchController = new AbortController();
                 const timeoutId = setTimeout(() => fetchController.abort(), 15000);
 
@@ -803,10 +970,10 @@
                 const iconSlot1 = document.getElementById('icon-slot-1');
                 const iconSlot2 = document.getElementById('icon-slot-2');
                 
+                document.getElementById('author-avatar').src = json.data.author.avatar;
                 document.getElementById('author-name').innerText = json.data.author.nickname;
                 document.getElementById('author-username').innerText = `@${json.data.author.unique_id}`;
                 
-                // --- Logika Kustom Deteksi Caption Kosong ---
                 const captionText = json.data.title || "";
                 const captionEl = document.getElementById('caption');
                 if (captionText.trim() === "") {
@@ -818,7 +985,6 @@
                     toggleVisibility('caption', true, 'block');
                     toggleVisibility('copy-caption-btn', true, 'flex');
                     toggleVisibility('empty-caption-label', false);
-                    // [PERBAIKAN 21] Auto Resize
                     captionEl.style.height = 'auto';
                     captionEl.style.height = captionEl.scrollHeight + 'px';
                 }
@@ -828,7 +994,10 @@
                 document.getElementById('audio-size').innerText = '';
 
                 if (isPhoto) {
-                    mediaData = { type: 'photo', id: json.data.id, images: json.data.images, ext: 'jpeg' };
+                    mediaData = { 
+                        type: 'photo', id: json.data.id, images: json.data.images, ext: 'jpeg',
+                        authorAvatar: json.data.author.avatar, authorUsername: json.data.author.unique_id
+                    };
 
                     toggleVisibility('video-preview', false);
                     const gallery = document.getElementById('image-gallery');
@@ -838,7 +1007,13 @@
                     json.data.images.forEach((imgUrl, i) => {
                         let img = document.createElement('img');
                         img.src = imgUrl;
-                        img.alt = `TikTok Slide ${i + 1}`; // [PERBAIKAN 16] Teks Alternatif
+                        img.alt = `TikTok Slide ${i + 1}`; 
+                        img.onclick = () => {
+                            document.getElementById('lightbox-img').src = imgUrl;
+                            const lightbox = document.getElementById('lightbox');
+                            lightbox.style.display = 'flex';
+                            setTimeout(() => lightbox.classList.add('show'), 10);
+                        };
                         gallery.appendChild(img);
                     });
                     
@@ -861,16 +1036,52 @@
                     document.getElementById('photo-target').setAttribute('max', json.data.images.length);
                     document.getElementById('photo-target').value = 1;
                     document.getElementById('target-label').innerText = 1;
+                    
+                    // FETCH SIZE DIAM-DIAM DI LATAR BELAKANG (TUNGGU SEMUA SELESAI)
+                    document.getElementById('media-size').innerText = 'Menghitung total...';
+                    photoSizeCache = new Array(json.data.images.length).fill(null);
 
-                    fetchFileSize(json.data.images[0]).then(size => {
-                        document.getElementById('media-size').innerText = size !== 'Unknown' ? `~${size} / Foto` : 'Tidak diketahui';
+                    // 1. Kumpulkan semua request ke dalam satu array (Promise)
+                    const sizePromises = json.data.images.map(async (imgUrl, i) => {
+                        try {
+                            const res = await fetch(imgUrl, { method: 'HEAD' });
+                            const bytes = parseInt(res.headers.get('content-length')) || 0;
+                            
+                            // Simpan ke cache untuk tampilan per-foto
+                            photoSizeCache[i] = bytes > 0 ? formatBytes(bytes) : '';
+                            
+                            // Update label size satuan jika user sedang melihat slide ini
+                            if (parseInt(document.getElementById('photo-target').value) === (i + 1)) {
+                                updateSinglePhotoSizeUI(i + 1);
+                            }
+                            
+                            return bytes;
+                        } catch (e) {
+                            photoSizeCache[i] = '';
+                            return 0; // Jika gagal fetch, anggap 0 byte
+                        }
+                    });
+
+                    // 2. TUNGGU SEMUA request selesai, baru eksekusi penjumlahannya
+                    Promise.all(sizePromises).then(sizes => {
+                        // Tambahkan semua angka byte yang berhasil didapat
+                        const totalBytes = sizes.reduce((total, current) => total + current, 0);
+                        
+                        // Tampilkan hasil akhirnya
+                        if (totalBytes > 0) {
+                            document.getElementById('media-size').innerText = `Total: ~${formatBytes(totalBytes)}`;
+                        } else {
+                            // Jika semua API mengembalikan 0 (diblokir CDN TikTok)
+                            document.getElementById('media-size').innerText = 'Total tidak diketahui';
+                        }
                     });
 
                 } else {
                     const isHd = (json.data.hdplay != null && json.data.hdplay !== '');
                     mediaData = {
                         type: 'video', url: isHd ? json.data.hdplay : json.data.play, id: json.data.id,
-                        quality: isHd ? 'HD Quality' : 'SD Quality', ext: 'mp4'
+                        quality: isHd ? 'HD Quality' : 'SD Quality', ext: 'mp4',
+                        authorAvatar: json.data.author.avatar, authorUsername: json.data.author.unique_id
                     };
 
                     toggleVisibility('image-gallery', false);
@@ -882,7 +1093,6 @@
                     const videoEl = document.getElementById('video-preview');
                     toggleVisibility('video-preview', true);
                     videoEl.src = mediaData.url;
-                    // [PERBAIKAN 26] Tambahkan poster visual video sebelum play
                     if(json.data.cover || json.data.origin_cover) videoEl.poster = json.data.cover || json.data.origin_cover; 
 
                     iconSlot1.innerHTML = SVG_VIDEO;
@@ -912,11 +1122,14 @@
                 const audioTrigger = document.getElementById('audioDropdownTrigger');
                 const audioBtn = document.getElementById('downloadAudioBtn');
                 const audioWrapper = document.getElementById('audioDropdownWrapper');
+                const audioPlaceholder = document.getElementById('audio-placeholder');
                 
                 if (mediaData.music) {
                     audioTrigger.style.opacity = '1'; audioTrigger.style.pointerEvents = 'auto';
                     audioBtn.style.opacity = '1'; audioBtn.style.pointerEvents = 'auto';
-                    audioWrapper.style.opacity = '1';
+                    
+                    audioPlaceholder.style.display = 'block';
+                    audioWrapper.style.display = 'none';
 
                     fetchFileSize(mediaData.music).then(size => {
                         if (size !== 'Unknown') document.getElementById('audio-size').innerText = `(${size})`;
@@ -938,11 +1151,17 @@
 
                     wavesurfer.on('play', () => { toggleVisibility('play-icon', false); toggleVisibility('pause-icon', true); });
                     wavesurfer.on('pause', () => { toggleVisibility('play-icon', true); toggleVisibility('pause-icon', false); });
-                    wavesurfer.on('ready', () => { document.getElementById('audio-time').innerText = "0:00"; });
+                    wavesurfer.on('ready', () => { 
+                        document.getElementById('audio-time').innerText = "0:00"; 
+                        audioPlaceholder.style.display = 'none';
+                        audioWrapper.style.display = 'flex';
+                    });
 
                 } else {
                     audioTrigger.style.opacity = '0.3'; audioTrigger.style.pointerEvents = 'none';
                     audioBtn.style.opacity = '0.3'; audioBtn.style.pointerEvents = 'none';
+                    audioWrapper.style.display = 'flex';
+                    audioPlaceholder.style.display = 'none';
                     if (wavesurfer) {
                         wavesurfer.destroy(); wavesurfer = null;
                         document.getElementById('waveform').innerHTML = '';
@@ -960,21 +1179,34 @@
             }
         }
 
-        // Event Listeners di-manage rapih di bawah (PERBAIKAN 6 / Pembersihan)
         document.getElementById('url').addEventListener('input', updateInputBtn);
+        document.getElementById('url').addEventListener('keypress', (e) => { if (e.key === 'Enter') fetchVideoInfo(); });
         document.getElementById('search-button').addEventListener('click', fetchVideoInfo);
-        document.getElementById('copy-username-btn').addEventListener('click', () => copyText('author-username'));
-        document.getElementById('copy-caption-btn').addEventListener('click', () => copyText('caption'));
+        
+        document.getElementById('copy-caption-btn').addEventListener('click', (e) => {
+            const text = document.getElementById('caption').value;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Caption berhasil disalin!');
+                }).catch(() => copyFallback(text, 'Caption'));
+            } else {
+                copyFallback(text, 'Caption');
+            }
+        });
+        
         document.getElementById('btn-minus-photo').addEventListener('click', () => updatePhotoInput(-1));
         document.getElementById('btn-plus-photo').addEventListener('click', () => updatePhotoInput(1));
-        document.getElementById('photo-target').addEventListener('change', validatePhotoInput);
+        document.getElementById('photo-target').addEventListener('change', () => validatePhotoInput(true));
+        
         document.getElementById('audioDropdownTrigger').addEventListener('click', toggleAudioPlayer);
         document.getElementById('play-pause-btn').addEventListener('click', () => { if (wavesurfer) wavesurfer.playPause(); });
         document.getElementById('reset-btn').addEventListener('click', resetForm);
         document.getElementById('prev-btn').addEventListener('click', () => slideGallery(-1));
         document.getElementById('next-btn').addEventListener('click', () => slideGallery(1));
+        
+        window.addEventListener('online', () => document.getElementById('offline-banner').classList.remove('active'));
+        window.addEventListener('offline', () => document.getElementById('offline-banner').classList.add('active'));
 
-        // Handler tombol download utama dengan logika cancel
         document.getElementById('downloadBtn').addEventListener('click', () => {
             if (isDownloading) cancelDownload();
             else startDownload();
@@ -982,14 +1214,28 @@
         document.getElementById('singleDlBtn').addEventListener('click', downloadSingle);
         document.getElementById('downloadAudioBtn').addEventListener('click', downloadAudio);
         
+        // Listener Scroll Galeri: Memperbarui Label Size Tanpa Loading
         document.getElementById('image-gallery').addEventListener('scroll', () => {
             if (!mediaData || mediaData.type !== 'photo') return;
             const gallery = document.getElementById('image-gallery');
             let index = Math.round(gallery.scrollLeft / gallery.clientWidth) + 1;
+            
+            // Update counter (teks 1/5) tetap real-time agar mulus
             document.getElementById('image-counter').innerText = `${index} / ${mediaData.images.length}`;
+
+            // Gunakan Debounce agar tidak bentrok dengan animasi tombol +/-
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const input = document.getElementById('photo-target');
+                // Hanya ubah value dan size JIKA input berbeda dengan index asli
+                if (parseInt(input.value) !== index) {
+                    input.value = index;
+                    document.getElementById('target-label').innerText = index;
+                    updateSinglePhotoSizeUI(index);
+                }
+            }, 150); // Menunggu 150ms sampai animasi bergeser selesai
         });
 
-        // [PERBAIKAN 20] Download file Blob dilengkapi pengaitan AbortSignal
         function downloadFileByBlob(url, filename, progressCallback, signal) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
@@ -1018,7 +1264,6 @@
                         a.download = filename;
                         document.body.appendChild(a);
                         a.click();
-                        // [PERBAIKAN 14] Memory Leak Clearance - Blob langsung dihapus setelah dipakai.
                         window.URL.revokeObjectURL(blobUrl); 
                         a.remove();
                         resolve();
@@ -1035,7 +1280,6 @@
         async function startDownload() {
             if (isDownloading || !mediaData) return;
             
-            // [PERBAIKAN 25] Pause video jika sedang terputar
             const vidEl = document.getElementById('video-preview');
             if (mediaData.type === 'video' && !vidEl.paused) vidEl.pause();
 
@@ -1062,7 +1306,7 @@
                 } 
                 else if (mediaData.type === 'photo') {
                     const totalPhotos = mediaData.images.length;
-                    const chunkSize = 3; // [PERBAIKAN 12] Batas konkurensi (3 file per iterasi)
+                    const chunkSize = 3; 
                     let completed = 0;
 
                     for (let i = 0; i < totalPhotos; i += chunkSize) {
@@ -1075,7 +1319,7 @@
                             progress.style.width = percent + '%';
                             btnLabel.innerText = `Unduh (${completed}/${totalPhotos}) - ${percent}%`;
                         }));
-                        await new Promise(r => setTimeout(r, 300)); // Jedah bernapas singkat antar chunk
+                        await new Promise(r => setTimeout(r, 300)); 
                     }
                     progress.style.width = '100%';
                     showToast('Semua foto berhasil diunduh!');
@@ -1087,7 +1331,6 @@
             }
         }
 
-        // [TAMBAHAN 20] Logika batal
         function cancelDownload() {
             if(downloadController) downloadController.abort();
             resetDownloadBtn();
@@ -1149,16 +1392,16 @@
         }
 
         function resetForm() {
-            // Jika dalam kondisi reset saat download jalan, batalkan
             if(isDownloading && downloadController) downloadController.abort();
 
             document.getElementById('url').value = '';
             toggleVisibility('preview', false);
+            document.getElementById('creator-dropdown').classList.remove('show');
             
             const vidPreview = document.getElementById('video-preview');
             vidPreview.pause();
             vidPreview.src = '';
-            vidPreview.removeAttribute('poster'); // clear poster
+            vidPreview.removeAttribute('poster'); 
             
             document.getElementById('image-gallery').innerHTML = '';
             toggleVisibility('prev-btn', false);
@@ -1182,6 +1425,8 @@
             toggleVisibility('search-button', true, 'flex');
             toggleVisibility('loader', false);
             mediaData = null;
+            photoSizeCache = [];
+            document.getElementById('single-photo-size').innerText = '';
             resetDownloadBtn();
             updateInputBtn();
         }
