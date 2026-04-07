@@ -453,7 +453,7 @@
             gallery.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
         }
 
-        // FUNGSI VALIDASI INPUT (Tanpa Auto-Scroll Gambar)
+        // FUNGSI VALIDASI INPUT 
         function validatePhotoInput() {
             if (!mediaData || mediaData.type !== 'photo') return;
             let input = document.getElementById('photo-target');
@@ -473,7 +473,7 @@
             validatePhotoInput(); 
         }
 
-        // INDIKATOR HALAMAN FOTO SAAT DI-SCROLL (Tanpa mengupdate box input)
+        // INDIKATOR HALAMAN FOTO SAAT DI-SCROLL
         document.getElementById('image-gallery').addEventListener('scroll', () => {
             if (!mediaData || mediaData.type !== 'photo') return;
             
@@ -630,7 +630,9 @@
             
             if (mediaData.type === 'video') {
                 btnLabel.innerText = 'Mengunduh... 0%';
-                await downloadFileByBlob(mediaData.url, `TikTok_${mediaData.id}.${mediaData.ext}`, (percent) => {
+                
+                // --- PERUBAHAN NAMA FILE VIDEO DI SINI ---
+                await downloadFileByBlob(mediaData.url, `Xeztik_${mediaData.id}.${mediaData.ext}`, (percent) => {
                     progress.style.width = percent + '%';
                     btnLabel.innerText = `Mengunduh... ${percent}%`;
                 });
@@ -642,7 +644,8 @@
                     btnLabel.innerText = `Mengunduh Foto ${i+1} dari ${totalPhotos}...`;
                     progress.style.width = Math.round(((i) / totalPhotos) * 100) + '%';
                     
-                    await downloadFileByBlob(mediaData.images[i], `TikTok_${mediaData.id}_Slide${i+1}.${mediaData.ext}`, null);
+                    // --- PERUBAHAN NAMA FILE FOTO (SEMUA) DI SINI ---
+                    await downloadFileByBlob(mediaData.images[i], `Xeztik_${mediaData.id}_Slide${i+1}.${mediaData.ext}`, null);
                     await new Promise(r => setTimeout(r, 500)); 
                 }
                 progress.style.width = '100%';
@@ -665,7 +668,8 @@
             targetBtn.style.pointerEvents = 'none';
             isDownloading = true;
             
-            await downloadFileByBlob(mediaData.images[index], `TikTok_${mediaData.id}_Slide${index+1}.${mediaData.ext}`, null);
+            // --- PERUBAHAN NAMA FILE FOTO (SATUAN) DI SINI ---
+            await downloadFileByBlob(mediaData.images[index], `Xeztik_${mediaData.id}_Slide${index+1}.${mediaData.ext}`, null);
             
             showToast(`Foto ke-${index+1} berhasil diunduh!`);
             
