@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium TikTok Downloader - by Xez</title>
+    <title>TikTok Downloader - by Xez</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -45,7 +45,6 @@
             line-height: 1.6;
         }
 
-        /* Ambient Glow Behind Card */
         .glow-effect {
             position: absolute;
             top: 50%;
@@ -96,7 +95,6 @@
             gap: 12px;
         }
 
-        /* Beautiful Gradient Text */
         .text-gradient {
             background: linear-gradient(135deg, var(--brand-cyan), var(--text-primary), var(--brand-pink));
             -webkit-background-clip: text;
@@ -109,7 +107,6 @@
             font-weight: 500;
         }
 
-        /* Modern Input Group */
         .input-group {
             position: relative;
             margin-bottom: 1.5rem;
@@ -124,7 +121,8 @@
 
         .url-input {
             width: 100%;
-            padding: 1.25rem 1.25rem 1.25rem 3rem;
+            /* PERBAIKAN 1: Padding kanan dibesarkan menjadi 100px agar tidak nabrak tombol Paste */
+            padding: 1.25rem 100px 1.25rem 3rem;
             background: var(--bg-input);
             border: 2px solid var(--border-color);
             border-radius: var(--radius-lg);
@@ -156,10 +154,10 @@
             right: 8px;
             top: 50%;
             transform: translateY(-50%);
-            background: transparent;
-            color: var(--text-secondary);
-            border: none;
-            padding: 8px 12px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
             border-radius: var(--radius-md);
             cursor: pointer;
             font-weight: 600;
@@ -171,8 +169,8 @@
         }
 
         .paste-btn:hover {
-            background: rgba(255,255,255,0.1);
-            color: var(--text-primary);
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
         }
 
         .main-button {
@@ -200,7 +198,6 @@
             box-shadow: 0 12px 25px -6px rgba(254, 44, 85, 0.6);
         }
 
-        /* Enhanced Preview Area (Grid Layout) */
         .preview-container {
             display: none;
             opacity: 0;
@@ -234,7 +231,6 @@
             object-fit: cover;
         }
 
-        /* Modern Info Section */
         .info-box {
             display: flex;
             flex-direction: column;
@@ -269,7 +265,6 @@
             font-size: 0.95rem;
         }
 
-        /* SOLUSI ICON COPY KECIL: Action Buttons yang Jelas */
         .action-btn {
             display: flex;
             align-items: center;
@@ -315,6 +310,7 @@
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 16px;
+            padding-right: 54px; /* Supaya text gak nabrak tombol copy */
             color: var(--text-primary);
             font-family: inherit;
             font-size: 0.95rem;
@@ -336,7 +332,12 @@
             height: 36px;
         }
 
-        /* Chips / Badges for Data */
+        .badges-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
         .badges-container {
             display: flex;
             gap: 12px;
@@ -353,22 +354,40 @@
             border-radius: 100px;
             font-size: 0.9rem;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--text-secondary);
+            transition: var(--transition);
         }
 
         .badge svg {
             width: 16px;
             height: 16px;
-            color: var(--brand-cyan);
         }
 
+        /* Saat HD tersedia */
         .badge.highlight {
             background: rgba(37, 244, 238, 0.1);
             border-color: rgba(37, 244, 238, 0.3);
             color: var(--brand-cyan);
         }
 
-        /* Action Grid */
+        .badge.highlight svg {
+            color: var(--brand-cyan);
+        }
+
+        /* PERBAIKAN 2: Notifikasi Merah jika HD tidak tersedia */
+        .hd-warning {
+            display: none; /* Disembunyikan secara default */
+            align-items: center;
+            gap: 8px;
+            color: var(--brand-pink);
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(254, 44, 85, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(254, 44, 85, 0.2);
+        }
+
         .action-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -387,7 +406,6 @@
             transform: translateY(-2px);
         }
 
-        /* Progress Bar Download */
         .download-btn {
             position: relative;
             overflow: hidden;
@@ -409,7 +427,6 @@
             gap: 8px;
         }
 
-        /* Loader */
         .loader-container {
             display: none;
             justify-content: center;
@@ -428,7 +445,6 @@
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* Footer */
         .footer {
             margin-top: 2rem;
             text-align: center;
@@ -438,7 +454,6 @@
         }
         .footer span { color: var(--brand-cyan); font-weight: 700; }
 
-        /* Notification Toast Modern */
         .toast-container {
             position: fixed;
             bottom: 30px;
@@ -477,7 +492,6 @@
             to { transform: translateY(50px) scale(0.9); opacity: 0; }
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .container { padding: 1.5rem; border-radius: var(--radius-lg); }
             .preview-grid { grid-template-columns: 1fr; }
@@ -500,7 +514,7 @@
                 </svg>
                 <span class="text-gradient">Xeztik</span>
             </h1>
-            <p class="app-description">Unduh Video Kualitas HD Tanpa Watermark</p>
+            <p class="app-description">Unduh Video Original dari TikTok Tanpa Watermark</p>
         </div>
 
         <div class="input-group" id="search-section">
@@ -548,20 +562,31 @@
                         </button>
                     </div>
 
-                    <div class="badges-container">
-                        <div class="badge highlight">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                            </svg>
-                            <span id="quality">No Watermark</span>
+                    <div class="badges-wrapper">
+                        <div class="badges-container">
+                            <div class="badge" id="quality-badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                                </svg>
+                                <span id="quality">Memuat Kualitas...</span>
+                            </div>
+                            <div class="badge" style="color: var(--text-primary);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary);">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span id="duration">00:00</span>
+                            </div>
                         </div>
-                        <div class="badge">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        
+                        <div class="hd-warning" id="hd-warning">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
                             </svg>
-                            <span id="duration">00:00</span>
+                            Video kualitas HD tidak tersedia, otomatis dialihkan ke versi SD.
                         </div>
                     </div>
 
@@ -670,7 +695,9 @@
 
                 if (!json.data || !json.data.play) throw new Error("Video tidak ditemukan/Private");
 
-                const isHd = json.data.hdplay != null;
+                // Cek ketersediaan HD dengan lebih presisi
+                const isHd = (json.data.hdplay != null && json.data.hdplay !== '');
+                
                 videoData = {
                     url: isHd ? json.data.hdplay : json.data.play,
                     id: json.data.id,
@@ -681,9 +708,22 @@
                 document.getElementById('video-preview').src = videoData.url;
                 document.getElementById('author-name').innerText = json.data.author.nickname;
                 document.getElementById('author-username').innerText = `@${json.data.author.unique_id}`;
-                document.getElementById('quality').innerText = videoData.quality;
                 document.getElementById('duration').innerText = formatDuration(json.data.duration);
                 document.getElementById('caption').value = json.data.title || "Tidak ada caption.";
+
+                // Mengatur tampilan Badge Kualitas & Peringatan
+                const qualityBadge = document.getElementById('quality-badge');
+                const hdWarning = document.getElementById('hd-warning');
+                
+                document.getElementById('quality').innerText = videoData.quality;
+
+                if (isHd) {
+                    qualityBadge.classList.add('highlight');
+                    hdWarning.style.display = 'none';
+                } else {
+                    qualityBadge.classList.remove('highlight');
+                    hdWarning.style.display = 'flex';
+                }
 
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('preview').style.display = 'block';
