@@ -79,14 +79,42 @@
         }
         .offline-banner.active { transform: translateY(0); }
 
+        /* Lightbox CSS */
         #lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
-            z-index: 20000; display: none; justify-content: center; align-items: center; cursor: zoom-out;
+            z-index: 20000; display: none; justify-content: center; align-items: center;
             backdrop-filter: blur(10px); opacity: 0; transition: opacity 0.4s ease;
         }
         #lightbox.show { opacity: 1; }
-        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.4s ease; }
-        #lightbox.show img { transform: scale(1); }
+        #lightbox img { 
+            max-width: 90%; max-height: 90%; border-radius: 12px; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); object-fit: contain; 
+            transform: scale(0.95); transition: transform 0.15s ease-out; 
+            touch-action: none; cursor: zoom-in;
+        }
+        #lightbox img.is-dragging {
+            transition: none !important;
+        }
+        
+        .lb-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(20, 20, 22, 0.5); color: white; border: 1px solid rgba(255,255,255,0.15);
+            width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; z-index: 20005; backdrop-filter: blur(8px);
+            transition: var(--transition);
+        }
+        .lb-nav-btn:hover { background: var(--brand-cyan); color: #000; border-color: var(--brand-cyan); transform: translateY(-50%) scale(1.1); }
+        #lb-prev { left: 20px; }
+        #lb-next { right: 20px; }
+        
+        #lb-close {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.1); color: white; border: none;
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            font-size: 24px; z-index: 20005; display: flex; justify-content: center; align-items: center;
+            transition: var(--transition); backdrop-filter: blur(8px);
+        }
+        #lb-close:hover { background: var(--brand-pink); transform: scale(1.1); }
 
         .glow-effect {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
@@ -328,7 +356,6 @@
         }
         .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Layout Fix Anti Glitch (Satu Baris) */
         .single-dl-btn { 
             flex: 1; 
             display: flex; 
@@ -466,7 +493,18 @@
 </head>
 <body>
     <div id="offline-banner" class="offline-banner">Koneksi internet terputus. Beberapa fitur mungkin tidak berfungsi.</div>
-    <div id="lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt="Zoomed View"></div>
+    
+    <div id="lightbox" onclick="closeLightbox(event)">
+        <button id="lb-close" onclick="closeLightbox(event)">&times;</button>
+        <button id="lb-prev" class="lb-nav-btn" onclick="changeLightboxImage(-1)">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <img id="lightbox-img" src="" alt="Zoomed View">
+        <button id="lb-next" class="lb-nav-btn" onclick="changeLightboxImage(1)">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+    </div>
+    
     <div class="glow-effect"></div>
     
     <div class="container">
@@ -696,8 +734,14 @@
         let wavesurfer = null;
         let isSearchRateLimited = false; 
         let downloadController = null;
-        let photoSizeCache = []; // Cache disetel jadi array
-        let scrollTimeout = null; // Tambahan untuk debounce scroll
+        let photoSizeCache = [];
+
+        // Variabel untuk Lightbox & Zoom
+        let currentLightboxIndex = 0;
+        let currentScale = 1;
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
+        const lbImg = document.getElementById('lightbox-img');
 
         const SVG_VIDEO = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`;
         const SVG_CLOCK = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
@@ -792,7 +836,6 @@
             }
         }
 
-        // FUNGSI COPY 100% WORKS (Dilengkapi execCommand Fallback)
         function copyFallback(text, labelName) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
@@ -834,7 +877,124 @@
             gallery.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
         }
 
-        // Tampilkan size hanya dari cache, hindari layout shifting & glitch
+        // FUNGSI LIGHTBOX & ZOOM 
+        function openLightbox(index) {
+            currentLightboxIndex = index;
+            updateLightboxImage();
+            const lightbox = document.getElementById('lightbox');
+            lightbox.style.display = 'flex';
+            setTimeout(() => lightbox.classList.add('show'), 10);
+        }
+
+        function closeLightbox(e) {
+            if (e && e.target.id !== 'lightbox' && e.target.id !== 'lb-close') return;
+            const box = document.getElementById('lightbox');
+            box.classList.remove('show');
+            setTimeout(() => {
+                box.style.display = 'none';
+                resetZoom();
+            }, 400);
+        }
+
+        function changeLightboxImage(direction) {
+            if (!mediaData || !mediaData.images) return;
+            currentLightboxIndex += direction;
+            if (currentLightboxIndex < 0) currentLightboxIndex = mediaData.images.length - 1;
+            if (currentLightboxIndex >= mediaData.images.length) currentLightboxIndex = 0;
+            updateLightboxImage();
+        }
+
+        function updateLightboxImage() {
+            resetZoom();
+            lbImg.src = mediaData.images[currentLightboxIndex];
+        }
+
+        function resetZoom() {
+            currentScale = 1;
+            translateX = 0;
+            translateY = 0;
+            lbImg.style.transform = `translate(0px, 0px) scale(1)`;
+            lbImg.style.cursor = 'zoom-in';
+        }
+
+        function applyTransform() {
+            lbImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+            lbImg.style.cursor = currentScale > 1 ? 'grab' : 'zoom-in';
+        }
+
+        // ZOOM PC (Mouse Wheel)
+        lbImg.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            currentScale += e.deltaY * -0.002;
+            currentScale = Math.min(Math.max(1, currentScale), 5); // max zoom 5x
+            applyTransform();
+        });
+
+        // DRAG/PAN untuk PC/Mobile saat di-zoom
+        lbImg.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+            if (currentScale > 1) {
+                isDragging = true;
+                lbImg.classList.add('is-dragging'); // Matikan animasi jeli
+                startX = e.pageX - translateX;
+                startY = e.pageY - translateY;
+                lbImg.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging && currentScale > 1) {
+                e.preventDefault();
+                translateX = e.pageX - startX;
+                translateY = e.pageY - startY;
+                applyTransform();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            lbImg.classList.remove('is-dragging'); // Nyalakan animasi lagi
+            if (currentScale > 1) lbImg.style.cursor = 'grab';
+        });
+
+        // PINCH ZOOM MOBILE
+        let initDist = 0;
+        let initScale = 1;
+
+        lbImg.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                lbImg.classList.remove('is-dragging'); 
+                initDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                initScale = currentScale;
+            } else if (e.touches.length === 1 && currentScale > 1) {
+                isDragging = true;
+                lbImg.classList.add('is-dragging'); // Matikan animasi jeli
+                startX = e.touches[0].pageX - translateX;
+                startY = e.touches[0].pageY - translateY;
+            }
+        });
+
+        lbImg.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const currDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                currentScale = initScale * (currDist / initDist);
+                currentScale = Math.min(Math.max(1, currentScale), 5);
+                applyTransform();
+            } else if (e.touches.length === 1 && isDragging && currentScale > 1) {
+                e.preventDefault();
+                translateX = e.touches[0].pageX - startX;
+                translateY = e.touches[0].pageY - startY;
+                applyTransform();
+            }
+        }, { passive: false });
+
+        lbImg.addEventListener('touchend', () => { 
+            isDragging = false; 
+            lbImg.classList.remove('is-dragging'); // Nyalakan animasi lagi
+        });
+
+
         function updateSinglePhotoSizeUI(index) {
             const sizeLabel = document.getElementById('single-photo-size');
             const cachedSize = photoSizeCache[index - 1];
@@ -845,7 +1005,8 @@
             }
         }
 
-        function validatePhotoInput(isManualEdit = false) {
+        // FUNGSI INI DECOUPLED dari Scroll Galeri
+        function validatePhotoInput() {
             if (!mediaData || mediaData.type !== 'photo') return;
             const input = document.getElementById('photo-target');
             const max = mediaData.images.length;
@@ -857,18 +1018,13 @@
             input.value = val;
             document.getElementById('target-label').innerText = val;
             updateSinglePhotoSizeUI(val);
-
-            if(isManualEdit) {
-                const gallery = document.getElementById('image-gallery');
-                gallery.scrollTo({ left: (val - 1) * gallery.clientWidth, behavior: 'smooth' });
-            }
         }
 
         function updatePhotoInput(change) {
             const input = document.getElementById('photo-target');
             const current = parseInt(input.value) || 1;
             input.value = current + change;
-            validatePhotoInput(true); 
+            validatePhotoInput(); 
         }
 
         function toggleAudioPlayer() {
@@ -901,7 +1057,6 @@
             }
         });
 
-        // Event Listener khusus tombol Copy di Dropdown (Mencegah masalah event mati)
         document.getElementById('copy-user-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             copyTextDirect('author-username', 'Username');
@@ -920,12 +1075,6 @@
             showToast("Mengunduh Foto Profil...");
             document.getElementById('creator-dropdown').classList.remove('show');
             await downloadFileByBlob(mediaData.authorAvatar, `Xeztik_Avatar_${mediaData.authorUsername}.jpeg`, null);
-        }
-
-        function closeLightbox() {
-            const box = document.getElementById('lightbox');
-            box.classList.remove('show');
-            setTimeout(() => box.style.display = 'none', 400); 
         }
 
         async function fetchVideoInfo() {
@@ -1009,10 +1158,7 @@
                         img.src = imgUrl;
                         img.alt = `TikTok Slide ${i + 1}`; 
                         img.onclick = () => {
-                            document.getElementById('lightbox-img').src = imgUrl;
-                            const lightbox = document.getElementById('lightbox');
-                            lightbox.style.display = 'flex';
-                            setTimeout(() => lightbox.classList.add('show'), 10);
+                            openLightbox(i);
                         };
                         gallery.appendChild(img);
                     });
@@ -1037,41 +1183,29 @@
                     document.getElementById('photo-target').value = 1;
                     document.getElementById('target-label').innerText = 1;
                     
-                    // FETCH SIZE DIAM-DIAM DI LATAR BELAKANG (TUNGGU SEMUA SELESAI)
                     document.getElementById('media-size').innerText = 'Menghitung total...';
                     photoSizeCache = new Array(json.data.images.length).fill(null);
 
-                    // 1. Kumpulkan semua request ke dalam satu array (Promise)
                     const sizePromises = json.data.images.map(async (imgUrl, i) => {
                         try {
                             const res = await fetch(imgUrl, { method: 'HEAD' });
                             const bytes = parseInt(res.headers.get('content-length')) || 0;
-                            
-                            // Simpan ke cache untuk tampilan per-foto
                             photoSizeCache[i] = bytes > 0 ? formatBytes(bytes) : '';
-                            
-                            // Update label size satuan jika user sedang melihat slide ini
                             if (parseInt(document.getElementById('photo-target').value) === (i + 1)) {
                                 updateSinglePhotoSizeUI(i + 1);
                             }
-                            
                             return bytes;
                         } catch (e) {
                             photoSizeCache[i] = '';
-                            return 0; // Jika gagal fetch, anggap 0 byte
+                            return 0;
                         }
                     });
 
-                    // 2. TUNGGU SEMUA request selesai, baru eksekusi penjumlahannya
                     Promise.all(sizePromises).then(sizes => {
-                        // Tambahkan semua angka byte yang berhasil didapat
                         const totalBytes = sizes.reduce((total, current) => total + current, 0);
-                        
-                        // Tampilkan hasil akhirnya
                         if (totalBytes > 0) {
                             document.getElementById('media-size').innerText = `Total: ~${formatBytes(totalBytes)}`;
                         } else {
-                            // Jika semua API mengembalikan 0 (diblokir CDN TikTok)
                             document.getElementById('media-size').innerText = 'Total tidak diketahui';
                         }
                     });
@@ -1196,7 +1330,7 @@
         
         document.getElementById('btn-minus-photo').addEventListener('click', () => updatePhotoInput(-1));
         document.getElementById('btn-plus-photo').addEventListener('click', () => updatePhotoInput(1));
-        document.getElementById('photo-target').addEventListener('change', () => validatePhotoInput(true));
+        document.getElementById('photo-target').addEventListener('change', () => validatePhotoInput());
         
         document.getElementById('audioDropdownTrigger').addEventListener('click', toggleAudioPlayer);
         document.getElementById('play-pause-btn').addEventListener('click', () => { if (wavesurfer) wavesurfer.playPause(); });
@@ -1214,26 +1348,13 @@
         document.getElementById('singleDlBtn').addEventListener('click', downloadSingle);
         document.getElementById('downloadAudioBtn').addEventListener('click', downloadAudio);
         
-        // Listener Scroll Galeri: Memperbarui Label Size Tanpa Loading
+        // Listener Scroll Galeri: Hanya perbarui teks label
         document.getElementById('image-gallery').addEventListener('scroll', () => {
             if (!mediaData || mediaData.type !== 'photo') return;
             const gallery = document.getElementById('image-gallery');
             let index = Math.round(gallery.scrollLeft / gallery.clientWidth) + 1;
             
-            // Update counter (teks 1/5) tetap real-time agar mulus
             document.getElementById('image-counter').innerText = `${index} / ${mediaData.images.length}`;
-
-            // Gunakan Debounce agar tidak bentrok dengan animasi tombol +/-
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                const input = document.getElementById('photo-target');
-                // Hanya ubah value dan size JIKA input berbeda dengan index asli
-                if (parseInt(input.value) !== index) {
-                    input.value = index;
-                    document.getElementById('target-label').innerText = index;
-                    updateSinglePhotoSizeUI(index);
-                }
-            }, 150); // Menunggu 150ms sampai animasi bergeser selesai
         });
 
         function downloadFileByBlob(url, filename, progressCallback, signal) {
