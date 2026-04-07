@@ -214,9 +214,6 @@
         }
         .hd-warning svg { flex-shrink: 0; }
 
-        /* ========================================= */
-        /* LAYOUT BARU: FLEX COLUMN (100% NYAMPING)  */
-        /* ========================================= */
         .action-container { 
             display: flex; 
             flex-direction: column; 
@@ -319,8 +316,15 @@
         .play-btn:hover { transform: scale(1.08) translateY(-2px); box-shadow: 0 12px 20px -4px rgba(254, 44, 85, 0.6); }
         .play-btn svg { width: 20px; height: 20px; margin-left: 2px; flex-shrink: 0; } 
         
-        .waveform-container { flex: 1; height: 44px; cursor: pointer; overflow: hidden; }
-        
+        .waveform-container { 
+            flex: 1; 
+            height: 44px; 
+            cursor: pointer; 
+            min-width: 0; 
+            overflow: hidden; /* Mencegah bocor/bug garis ganda saat dirender */
+            border-radius: 4px;
+        }
+
         .audio-time { 
             font-size: 0.85rem; font-weight: 700; color: var(--brand-cyan); 
             width: 45px; text-align: right; flex-shrink: 0;
@@ -593,9 +597,6 @@
         const SVG_PASTE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Paste`;
         const SVG_CLEAR = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Hapus`;
 
-        // ---------------------------------------------------------
-        // FUNGSI UNTUK FORMAT DAN FETCH SIZE FILE
-        // ---------------------------------------------------------
         function formatBytes(bytes, decimals = 2) {
             if (!+bytes) return '0 Bytes';
             const k = 1024;
@@ -614,7 +615,6 @@
                 return 'Unknown';
             }
         }
-        // ---------------------------------------------------------
 
         function showToast(msg, isError = false) {
             let toastBox = document.getElementById('toastBox');
@@ -765,9 +765,8 @@
                 document.getElementById('author-username').innerText = `@${json.data.author.unique_id}`;
                 document.getElementById('caption').value = json.data.title || "Tidak ada caption.";
 
-                // Reset placeholder sizes
                 document.getElementById('size-badge').style.display = 'inline-flex';
-                document.getElementById('media-size').innerText = 'Menghitung ukuran...';
+                document.getElementById('media-size').innerText = 'Menghitung...';
                 document.getElementById('audio-size').innerText = '';
 
                 if (isPhoto) {
@@ -804,7 +803,6 @@
                     document.getElementById('photo-target').value = 1;
                     document.getElementById('target-label').innerText = 1;
 
-                    // Mengambil ukuran untuk foto pertama sebagai estimasi
                     fetchFileSize(json.data.images[0]).then(size => {
                         document.getElementById('media-size').innerText = size !== 'Unknown' ? `~${size} / Foto` : 'Tidak diketahui';
                     });
@@ -840,7 +838,6 @@
                         hdWarning.style.display = 'flex';
                     }
 
-                    // Ambil ukuran dari API jika ada, jika tidak, fetch manual
                     if (json.data.size) {
                         document.getElementById('media-size').innerText = formatBytes(json.data.size);
                     } else {
@@ -862,7 +859,6 @@
                     audioBtn.style.pointerEvents = 'auto';
                     audioWrapper.style.opacity = '1';
 
-                    // Mengambil ukuran file musik
                     fetchFileSize(mediaData.music).then(size => {
                         if (size !== 'Unknown') {
                             document.getElementById('audio-size').innerText = `(${size})`;
@@ -873,23 +869,41 @@
                         wavesurfer.destroy();
                         wavesurfer = null;
                     }
+                    
+                    // KOSONGKAN CONTAINER AGAR TIDAK ADA BUG GARIS GANDA
+                    document.getElementById('waveform').innerHTML = '';
 
+                    // --- INISIALISASI WAVESURFER ---
                     wavesurfer = WaveSurfer.create({
                         container: '#waveform',
-                        waveColor: '#a1a1aa',     
+                        waveColor: 'rgba(255, 255, 255, 0.85)', // Warna dikembalikan menjadi putih terang
                         progressColor: '#25F4EE', 
+                        cursorColor: '#ffffff', // Garis kursor warna putih
+                        cursorWidth: 2, 
                         url: mediaData.music,
                         height: 40,
                         barWidth: 2.5,     
                         barGap: 3,         
                         barRadius: 2, 
-                        barHeight: 0.8,
-                        cursorWidth: 0,
-                        normalize: false,
-                        minPxPerSec: 50,      // Agar waveform bisa bergeser dan nggak nyempil di mobile
-                        hideScrollbar: true   // Menyembunyikan scrollbar native
+                        normalize: true, 
+                        minPxPerSec: 50, // Membuat gelombang memanjang ke samping
+                        autoScroll: true, // Otomatis bergeser menyamping saat dimainkan
+                        hideScrollbar: true, // Native WS menyembunyikan scrollbar tanpa merusak koordinat
+                        dragToSeek: true, // AKTIFKAN KEMBALI: Bisa digeser/seek dengan kursor
+                        interact: true 
                     });
 
+                    // --- UPDATE WAKTU REALTIME ---
+                    const updateTime = () => {
+                        if (wavesurfer) {
+                            document.getElementById('audio-time').innerText = formatDuration(wavesurfer.getCurrentTime());
+                        }
+                    };
+                    
+                    wavesurfer.on('timeupdate', updateTime);   // Berubah saat dimainkan atau diklik
+                    wavesurfer.on('interaction', updateTime);  // Berubah saat digeser secara interaktif meski posisi pause
+
+                    // --- PLAY/PAUSE ICON UI ---
                     wavesurfer.on('play', () => {
                         document.getElementById('play-icon').style.display = 'none';
                         document.getElementById('pause-icon').style.display = 'block';
@@ -897,9 +911,6 @@
                     wavesurfer.on('pause', () => {
                         document.getElementById('play-icon').style.display = 'block';
                         document.getElementById('pause-icon').style.display = 'none';
-                    });
-                    wavesurfer.on('audioprocess', (currentTime) => {
-                        document.getElementById('audio-time').innerText = formatDuration(currentTime);
                     });
                     wavesurfer.on('ready', () => {
                         document.getElementById('audio-time').innerText = "0:00";
