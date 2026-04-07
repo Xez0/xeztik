@@ -219,7 +219,7 @@
         /* ========================================= */
         .action-container { 
             display: flex; 
-            flex-direction: column; /* Tombol otomatis berbaris ke bawah */
+            flex-direction: column; 
             gap: 16px; 
             width: 100%; 
         }
@@ -801,7 +801,6 @@
                     audioBtn.style.pointerEvents = 'auto';
                     audioWrapper.style.opacity = '1';
 
-                    // PASTIKAN MENGHANCURKAN INSTANCE LAMA AGAR WARNA & BENTUK BARU DITERAPKAN!
                     if (wavesurfer) {
                         wavesurfer.destroy();
                         wavesurfer = null;
@@ -809,16 +808,16 @@
 
                     wavesurfer = WaveSurfer.create({
                         container: '#waveform',
-                        waveColor: 'rgba(255, 255, 255, 0.25)', 
-                        progressColor: '#25F4EE', 
+                        waveColor: '#a1a1aa',     // 🔥 WARNA SOLID ABU-ABU TERANG AGAR JELAS
+                        progressColor: '#25F4EE', // 🔥 WARNA CYAN SOLID TERANG
                         url: mediaData.music,
                         height: 40,
-                        barWidth: 2.5,     // Dibuat lebih tipis dari versi pertama, tapi tetap jelas
+                        barWidth: 2.5,     
                         barGap: 3,         
                         barRadius: 2, 
                         barHeight: 0.8,
                         cursorWidth: 0,
-                        normalize: false   // WAJIB FALSE AGAR GELOMBANG NAIK TURUN NATURAL
+                        normalize: false   // WAJIB FALSE
                     });
 
                     wavesurfer.on('play', () => {
