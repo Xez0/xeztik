@@ -295,10 +295,12 @@
         .audio-dropdown-menu.show { display: block; }
         
         .audio-label { 
-            display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); 
+            display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); 
             margin: 16px 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
         }
+        .audio-label-left { display: flex; align-items: center; gap: 8px; }
         .audio-label svg { color: var(--brand-cyan); flex-shrink: 0; }
+        .audio-size { color: var(--brand-cyan); font-family: 'Courier New', Courier, monospace; letter-spacing: 0; }
 
         .custom-audio-player {
             display: flex; align-items: center; gap: 20px;
@@ -317,7 +319,7 @@
         .play-btn:hover { transform: scale(1.08) translateY(-2px); box-shadow: 0 12px 20px -4px rgba(254, 44, 85, 0.6); }
         .play-btn svg { width: 20px; height: 20px; margin-left: 2px; flex-shrink: 0; } 
         
-        .waveform-container { flex: 1; height: 44px; cursor: pointer; }
+        .waveform-container { flex: 1; height: 44px; cursor: pointer; overflow: hidden; }
         
         .audio-time { 
             font-size: 0.85rem; font-weight: 700; color: var(--brand-cyan); 
@@ -363,6 +365,14 @@
             .paste-btn { padding: 8px 12px; font-size: 0.85rem; }
             .input-icon { left: 1rem; }
             .container { padding: 1.5rem 1rem; }
+            
+            /* --- PERBAIKAN AUDIO PLAYER DI MOBILE --- */
+            .audio-dropdown-menu { padding: 0 16px 16px 16px; }
+            .custom-audio-player { gap: 12px; padding: 10px 14px; border-radius: 16px; }
+            .play-btn { width: 38px; height: 38px; }
+            .play-btn svg { width: 16px; height: 16px; margin-left: 2px; }
+            .waveform-container { height: 36px; }
+            .audio-time { width: auto; min-width: 35px; font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -451,6 +461,12 @@
                                 <span class="badge-icon-slot" id="icon-slot-2"></span>
                                 <span id="duration">00:00</span>
                             </div>
+                            <div class="badge" id="size-badge" style="display: none;">
+                                <span class="badge-icon-slot">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </span>
+                                <span id="media-size">Ukuran: -</span>
+                            </div>
                         </div>
                         
                         <div class="hd-warning" id="hd-warning">
@@ -527,11 +543,14 @@
                     
                     <div class="audio-dropdown-menu" id="audioDropdownMenu">
                         <div class="audio-label">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                            </svg>
-                            Preview Musik
+                            <div class="audio-label-left">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                </svg>
+                                Preview Musik
+                            </div>
+                            <span class="audio-size" id="audio-size"></span>
                         </div>
                         
                         <div class="custom-audio-player">
@@ -573,6 +592,29 @@
 
         const SVG_PASTE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Paste`;
         const SVG_CLEAR = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Hapus`;
+
+        // ---------------------------------------------------------
+        // FUNGSI UNTUK FORMAT DAN FETCH SIZE FILE
+        // ---------------------------------------------------------
+        function formatBytes(bytes, decimals = 2) {
+            if (!+bytes) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        }
+
+        async function fetchFileSize(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                const size = response.headers.get('content-length');
+                return size ? formatBytes(size) : 'Unknown';
+            } catch (e) {
+                return 'Unknown';
+            }
+        }
+        // ---------------------------------------------------------
 
         function showToast(msg, isError = false) {
             let toastBox = document.getElementById('toastBox');
@@ -723,6 +765,11 @@
                 document.getElementById('author-username').innerText = `@${json.data.author.unique_id}`;
                 document.getElementById('caption').value = json.data.title || "Tidak ada caption.";
 
+                // Reset placeholder sizes
+                document.getElementById('size-badge').style.display = 'inline-flex';
+                document.getElementById('media-size').innerText = 'Menghitung ukuran...';
+                document.getElementById('audio-size').innerText = '';
+
                 if (isPhoto) {
                     mediaData = { type: 'photo', id: json.data.id, images: json.data.images, ext: 'jpeg' };
 
@@ -757,6 +804,11 @@
                     document.getElementById('photo-target').value = 1;
                     document.getElementById('target-label').innerText = 1;
 
+                    // Mengambil ukuran untuk foto pertama sebagai estimasi
+                    fetchFileSize(json.data.images[0]).then(size => {
+                        document.getElementById('media-size').innerText = size !== 'Unknown' ? `~${size} / Foto` : 'Tidak diketahui';
+                    });
+
                 } else {
                     const isHd = (json.data.hdplay != null && json.data.hdplay !== '');
                     mediaData = {
@@ -787,6 +839,15 @@
                         qualityBadge.classList.remove('highlight');
                         hdWarning.style.display = 'flex';
                     }
+
+                    // Ambil ukuran dari API jika ada, jika tidak, fetch manual
+                    if (json.data.size) {
+                        document.getElementById('media-size').innerText = formatBytes(json.data.size);
+                    } else {
+                        fetchFileSize(mediaData.url).then(size => {
+                            document.getElementById('media-size').innerText = size !== 'Unknown' ? size : 'Tidak diketahui';
+                        });
+                    }
                 }
 
                 mediaData.music = json.data.music || (json.data.music_info ? json.data.music_info.play : null);
@@ -801,6 +862,13 @@
                     audioBtn.style.pointerEvents = 'auto';
                     audioWrapper.style.opacity = '1';
 
+                    // Mengambil ukuran file musik
+                    fetchFileSize(mediaData.music).then(size => {
+                        if (size !== 'Unknown') {
+                            document.getElementById('audio-size').innerText = `(${size})`;
+                        }
+                    });
+
                     if (wavesurfer) {
                         wavesurfer.destroy();
                         wavesurfer = null;
@@ -808,8 +876,8 @@
 
                     wavesurfer = WaveSurfer.create({
                         container: '#waveform',
-                        waveColor: '#a1a1aa',     // 🔥 WARNA SOLID ABU-ABU TERANG AGAR JELAS
-                        progressColor: '#25F4EE', // 🔥 WARNA CYAN SOLID TERANG
+                        waveColor: '#a1a1aa',     
+                        progressColor: '#25F4EE', 
                         url: mediaData.music,
                         height: 40,
                         barWidth: 2.5,     
@@ -817,7 +885,9 @@
                         barRadius: 2, 
                         barHeight: 0.8,
                         cursorWidth: 0,
-                        normalize: false   // WAJIB FALSE
+                        normalize: false,
+                        minPxPerSec: 50,      // Agar waveform bisa bergeser dan nggak nyempil di mobile
+                        hideScrollbar: true   // Menyembunyikan scrollbar native
                     });
 
                     wavesurfer.on('play', () => {
@@ -986,6 +1056,7 @@
             document.getElementById('prev-btn').style.display = 'none';
             document.getElementById('next-btn').style.display = 'none';
             document.getElementById('single-photo-download').style.display = 'none';
+            document.getElementById('size-badge').style.display = 'none';
             
             document.getElementById('audioDropdownWrapper').classList.remove('open');
             document.getElementById('audioDropdownMenu').classList.remove('show');
