@@ -854,14 +854,38 @@
             localStorage.setItem('xeztik_pwa_dismissed', 'true');
         });
 
-        console.log(`
-██╗  ██╗███████╗███████╗████████╗██╗██╗  ██╗
-╚██╗██╔╝██╔════╝╚══███╔╝╚══██╔══╝██║██║ ██╔╝
- ╚███╔╝ █████╗    ███╔╝    ██║   ██║█████╔╝ 
- ██╔██╗ ██╔══╝   ███╔╝     ██║   ██║██╔═██╗ 
-██╔╝ ██╗███████╗███████╗   ██║   ██║██║  ██╗
-╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚═╝╚═╝  ╚═╝
-        `);
+        // --- AWAL SCRIPT CLEAN CONSOLE ---
+        const originalLog = console.log;
+        
+        setTimeout(() => {
+            // Cetak ASCII Art dengan Gradient (Cyan ke Pink) dan space kosong di atas & bawah
+            originalLog(
+                `\n\n\n\n` +
+                `%c██╗  ██╗███████╗███████╗████████╗██╗██╗  ██╗\n` +
+                `╚██╗██╔╝██╔════╝╚══███╔╝╚══██╔══╝██║██║ ██╔╝\n` +
+                ` ╚███╔╝ █████╗    ███╔╝    ██║   ██║█████╔╝ \n` +
+                ` ██╔██╗ ██╔══╝   ███╔╝     ██║   ██║██╔═██╗ \n` +
+                `██╔╝ ██╗███████╗███████╗   ██║   ██║██║  ██╗\n` +
+                `╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚═╝╚═╝  ╚═╝\n` +
+                `%c Xeztik App - By Xez %c\n\n\n`,
+                
+                // 1. CSS untuk Gradient ASCII Art + Rapat
+                "background: linear-gradient(90deg, #25F4EE, #FE2C55); -webkit-background-clip: text; color: transparent; font-weight: bold; font-family: monospace; line-height: 1; font-size: 14px;",
+                
+                // 2. CSS untuk Badge Pink
+                "background: #FE2C55; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; margin-top: 10px;",
+                
+                // 3. CSS Reset agar space di bawah tidak ikut berwarna pink
+                "background: transparent; color: transparent;"
+            );
+
+            // Matikan semua fungsi console agar tidak ada log dari library/error yang bocor
+            console.log = function() {};
+            console.warn = function() {};
+            console.info = function() {};
+            console.error = function() {}; 
+        }, 100); 
+        // --- AKHIR SCRIPT CLEAN CONSOLE ---
 
         document.getElementById('current-year').innerText = new Date().getFullYear();
 
