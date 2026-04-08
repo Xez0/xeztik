@@ -241,15 +241,6 @@
             backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .pip-btn {
-            position: absolute; top: 0.75rem; left: 0.75rem;
-            background: rgba(20, 20, 22, 0.7); color: white; border: 1px solid rgba(255,255,255,0.15);
-            width: 2.2rem; height: 2.2rem; border-radius: 0.5rem; cursor: pointer; display: none; 
-            align-items: center; justify-content: center; transition: var(--transition); z-index: 10;
-            backdrop-filter: blur(8px);
-        }
-        .pip-btn:hover { background: var(--brand-cyan); color: #000; }
-
         .nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
             background: rgba(20, 20, 22, 0.7); color: white; border: 1px solid rgba(255,255,255,0.15);
@@ -437,7 +428,6 @@
             animation: spin 0.8s linear infinite;
         }
 
-        /* SPINNER INLINE UNTUK TEKS UKURAN */
         .inline-spinner {
             display: inline-block; width: 0.85rem; height: 0.85rem;
             border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--brand-cyan);
@@ -486,6 +476,29 @@
         .toast.error { background: var(--brand-pink); color: white; }
         @keyframes toastEnter { 0% { transform: translateY(50px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
         @keyframes toastLeave { to { transform: translateY(50px) scale(0.9); opacity: 0; } }
+
+        /* CUSTOM INSTALL BANNER PWA */
+        .install-banner {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(150px);
+            background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--brand-cyan); border-radius: var(--radius-lg);
+            padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;
+            z-index: 25000; width: 90%; max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(37, 244, 238, 0.2);
+            opacity: 0; transition: var(--transition);
+        }
+        .install-banner.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .install-info { display: flex; align-items: center; gap: 1rem; }
+        .install-icon { width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; border: 2px solid var(--border-color); object-fit: cover; }
+        .install-text { display: flex; flex-direction: column; }
+        .install-title { font-weight: 800; font-size: 1.1rem; color: var(--text-primary); }
+        .install-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.3; margin-top: 0.2rem;}
+        .install-actions { display: flex; gap: 0.75rem; width: 100%; }
+        .install-btn { flex: 1; padding: 0.75rem; border: none; border-radius: var(--radius-md); font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: var(--transition); font-family: inherit; }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+        .btn-cancel:hover { background: rgba(255,255,255,0.2); }
+        .btn-confirm { background: var(--brand-cyan); color: #000; box-shadow: 0 4px 15px rgba(37, 244, 238, 0.3); }
+        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 244, 238, 0.5); }
 
         @media (max-width: 992px) { .preview-grid { grid-template-columns: 1fr; gap: 1.25rem; } }
         @media (max-width: 768px) {
@@ -578,10 +591,6 @@
             <div class="preview-grid">
                 
                 <div class="video-box" id="media-container">
-                    <button id="pip-btn" class="pip-btn" title="Picture-in-Picture" aria-label="Aktifkan Mode PiP">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="12" y="14" width="7" height="5" rx="1" ry="1"></rect></svg>
-                    </button>
-
                     <button class="nav-btn prev-btn" id="prev-btn" aria-label="Slide sebelumnya">
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline>
@@ -765,22 +774,57 @@
         <div class="footer"><span>Xez</span> | <span id="current-year"></span></div>
     </div>
 
+    <div id="install-banner" class="install-banner">
+        <div class="install-info">
+            <img src="https://i.ibb.co.com/xpW0FHH/Columbina.jpg" alt="Icon" class="install-icon">
+            <div class="install-text">
+                <div class="install-title">Install Xeztik</div>
+                <div class="install-desc">Akses lebih cepat tanpa buka browser!</div>
+            </div>
+        </div>
+        <div class="install-actions">
+            <button id="install-close" class="install-btn btn-cancel">Nanti</button>
+            <button id="install-btn" class="install-btn btn-confirm">Install</button>
+        </div>
+    </div>
+
     <div class="toast-container" id="toastBox" aria-live="polite" aria-atomic="true"></div>
 
     <script>
-
-        // Register Service Worker untuk PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            })
-            .catch(err => {
-                console.log('ServiceWorker registration failed: ', err);
+        // Pendaftaran Service Worker untuk PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => { console.log('ServiceWorker registration successful'); })
+                    .catch(err => { console.log('ServiceWorker registration failed: ', err); });
             });
-    });
-}
+        }
+
+        // Logika Custom Install Banner PWA
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+        const installBtn = document.getElementById('install-btn');
+        const closeInstallBtn = document.getElementById('install-close');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            setTimeout(() => { installBanner.classList.add('show'); }, 1500);
+        });
+
+        installBtn.addEventListener('click', async () => {
+            installBanner.classList.remove('show');
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+            }
+        });
+
+        closeInstallBtn.addEventListener('click', () => {
+            installBanner.classList.remove('show');
+        });
+
         console.log(`
 ██╗  ██╗███████╗███████╗████████╗██╗██╗  ██╗
 ╚██╗██╔╝██╔════╝╚══███╔╝╚══██╔══╝██║██║ ██╔╝
@@ -835,7 +879,6 @@ if ('serviceWorker' in navigator) {
             return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
         }
 
-        // FUNGSI FETCH SIZE TANPA TIMEOUT (INFINITY LOADING JIKA GAGAL/LAMA)
         async function fetchFileSize(url) {
             try {
                 const response = await fetch(url, { method: 'HEAD' });
@@ -950,7 +993,6 @@ if ('serviceWorker' in navigator) {
             gallery.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
         }
 
-        // FUNGSI LIGHTBOX & ZOOM 
         function openLightbox(index) {
             currentLightboxIndex = index;
             updateLightboxImage();
@@ -1217,21 +1259,6 @@ if ('serviceWorker' in navigator) {
             }
         });
 
-        const pipBtn = document.getElementById('pip-btn');
-        const videoEl = document.getElementById('video-preview');
-        
-        pipBtn.addEventListener('click', async () => {
-            try {
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                } else {
-                    await videoEl.requestPictureInPicture();
-                }
-            } catch (err) {
-                showToast("Perangkat tidak mendukung Picture-in-Picture", true);
-            }
-        });
-
         async function fetchVideoInfo() {
             if (isSearchRateLimited) {
                 showToast("Tunggu beberapa detik sebelum permintaan baru.", true);
@@ -1310,7 +1337,6 @@ if ('serviceWorker' in navigator) {
                     };
 
                     toggleVisibility('video-preview', false);
-                    toggleVisibility('pip-btn', false); 
                     const gallery = document.getElementById('image-gallery');
                     toggleVisibility('image-gallery', true, 'flex');
                     gallery.innerHTML = '';
@@ -1347,7 +1373,6 @@ if ('serviceWorker' in navigator) {
                     document.getElementById('media-size').innerHTML = 'Total: <span class="inline-spinner"></span>';
                     photoSizeCache = new Array(json.data.images.length).fill(null);
 
-                    // Memanggil fungsi untuk trigger logo spinner di UI foto pertama
                     updateSinglePhotoSizeUI(1);
 
                     const sizePromises = json.data.images.map(async (imgUrl, i) => {
@@ -1361,7 +1386,6 @@ if ('serviceWorker' in navigator) {
                                 photoSizeCache[i] = sizeStr;
                                 if (parseInt(document.getElementById('photo-target').value) === (i + 1)) updateSinglePhotoSizeUI(i + 1);
                                 
-                                // Kalkulasi bytes asli kembali untuk total
                                 const res = await fetch(imgUrl, { method: 'HEAD' });
                                 return parseInt(res.headers.get('content-length')) || 0;
                             }
@@ -1395,15 +1419,10 @@ if ('serviceWorker' in navigator) {
                     toggleVisibility('next-btn', false);
                     toggleVisibility('single-photo-download', false);
 
+                    const videoEl = document.getElementById('video-preview');
                     toggleVisibility('video-preview', true);
                     videoEl.src = mediaData.url;
                     if(mediaData.cover) videoEl.poster = mediaData.cover; 
-                    
-                    if (document.pictureInPictureEnabled) {
-                        toggleVisibility('pip-btn', true, 'flex');
-                    } else {
-                        toggleVisibility('pip-btn', false);
-                    }
 
                     iconSlot1.innerHTML = SVG_VIDEO;
                     iconSlot2.innerHTML = SVG_CLOCK;
@@ -1723,7 +1742,6 @@ if ('serviceWorker' in navigator) {
             toggleVisibility('next-btn', false);
             toggleVisibility('single-photo-download', false);
             toggleVisibility('size-badge', false);
-            toggleVisibility('pip-btn', false);
             
             document.getElementById('audioDropdownWrapper').classList.remove('open');
             document.getElementById('audioDropdownMenu').classList.remove('show');
