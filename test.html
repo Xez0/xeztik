@@ -805,25 +805,33 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(registration => { 
-                        // Log sukses dihapus agar console bersih
-                    })
+                    .then(registration => {})
                     .catch(err => { 
                         console.log('ServiceWorker registration failed: ', err); 
                     });
             });
         }
 
-        // Logika Custom Install Banner PWA
+        // Logika Custom Install Banner PWA (Pintar & Anti-Spam)
         let deferredPrompt;
         const installBanner = document.getElementById('install-banner');
         const installBtn = document.getElementById('install-btn');
         const closeInstallBtn = document.getElementById('install-close');
 
+        // Cek apakah user sedang membuka Xeztik via Aplikasi (PWA)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        
+        // Cek apakah user pernah menolak/menutup banner sebelumnya
+        const isDismissed = localStorage.getItem('xeztik_pwa_dismissed');
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            setTimeout(() => { installBanner.classList.add('show'); }, 1500);
+            
+            // HANYA tampilkan jika belum pernah di-close dan tidak sedang di dalam aplikasi PWA
+            if (!isStandalone && !isDismissed) {
+                setTimeout(() => { installBanner.classList.add('show'); }, 1500);
+            }
         });
 
         installBtn.addEventListener('click', async () => {
@@ -831,12 +839,19 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
+                
+                // Jika user setuju install, catat di memori browser agar banner tidak muncul lagi
+                if (outcome === 'accepted') {
+                    localStorage.setItem('xeztik_pwa_dismissed', 'true');
+                }
                 deferredPrompt = null;
             }
         });
 
         closeInstallBtn.addEventListener('click', () => {
             installBanner.classList.remove('show');
+            // Jika user klik "Nanti Saja", catat di memori browser agar tidak diganggu lagi
+            localStorage.setItem('xeztik_pwa_dismissed', 'true');
         });
 
         console.log(`
@@ -1797,7 +1812,6 @@
         // --- Inisialisasi awal agar tombol Paste langsung berfungsi ---
         document.addEventListener("DOMContentLoaded", () => {
             updateInputBtn();
-            setTimeout(() => { document.getElementById('install-banner').classList.add('show'); }, 1500);
         });
     </script>
 </body>
