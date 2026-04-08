@@ -1,0 +1,21 @@
+{
+  "name": "Xeztik Downloader",
+  "short_name": "Xeztik",
+  "description": "Unduh Video & Foto TikTok tanpa watermark dengan kualitas original.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "https://i.ibb.co.com/xpW0FHH/Columbina.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://i.ibb.co.com/xpW0FHH/Columbina.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
