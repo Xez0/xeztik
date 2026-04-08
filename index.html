@@ -934,13 +934,39 @@
         }
 
         async function handlePaste() {
+            const urlInput = document.getElementById('url');
+            
             try {
+                // 1. Cek apakah browser mendukung fitur baca clipboard (Harus HTTPS)
+                if (!navigator.clipboard || !navigator.clipboard.readText) {
+                    throw new Error("Clipboard API tidak didukung");
+                }
+
+                // 2. Coba baca teks dari clipboard
                 const text = await navigator.clipboard.readText();
-                document.getElementById('url').value = text;
-                updateInputBtn(); 
-                showToast('URL berhasil ditempel');
+                
+                // Jika teks kosong, batalkan
+                if (!text) {
+                    showToast('Clipboard kosong!', true);
+                    return;
+                }
+
+                // 3. Masukkan teks ke input
+                urlInput.value = text;
+                
+                // 4. Trigger event 'input' secara manual agar tombol silang (X) langsung muncul
+                urlInput.dispatchEvent(new Event('input'));
+                
+                showToast('URL berhasil ditempel!');
+                
             } catch (err) {
-                showToast('Gagal mengakses clipboard', true);
+                console.warn("Paste otomatis ditolak oleh browser:", err);
+                
+                // FALLBACK: Arahkan fokus ke kolom input agar pengguna tinggal paste manual
+                urlInput.focus();
+                
+                // Beritahu pengguna cara paste manual
+                showToast('Gunakan Tahan & Paste atau Ctrl+V', true);
             }
         }
 
