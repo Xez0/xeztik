@@ -602,7 +602,8 @@
                         </svg>
                     </button>
 
-                    <video id="video-preview" class="video-preview" controls></video>
+                    <video id="video-preview" class="video-preview" controls controlsList="nodownload"></video>
+                    
                     <div id="image-gallery" class="image-gallery"></div>
                     <div id="image-counter" class="image-counter" style="display: none;">Memuat...</div>
                 </div>
@@ -937,35 +938,24 @@
             const urlInput = document.getElementById('url');
             
             try {
-                // 1. Cek apakah browser mendukung fitur baca clipboard (Harus HTTPS)
                 if (!navigator.clipboard || !navigator.clipboard.readText) {
                     throw new Error("Clipboard API tidak didukung");
                 }
 
-                // 2. Coba baca teks dari clipboard
                 const text = await navigator.clipboard.readText();
                 
-                // Jika teks kosong, batalkan
                 if (!text) {
                     showToast('Clipboard kosong!', true);
                     return;
                 }
 
-                // 3. Masukkan teks ke input
                 urlInput.value = text;
-                
-                // 4. Trigger event 'input' secara manual agar tombol silang (X) langsung muncul
                 urlInput.dispatchEvent(new Event('input'));
-                
                 showToast('URL berhasil ditempel!');
                 
             } catch (err) {
                 console.warn("Paste otomatis ditolak oleh browser:", err);
-                
-                // FALLBACK: Arahkan fokus ke kolom input agar pengguna tinggal paste manual
                 urlInput.focus();
-                
-                // Beritahu pengguna cara paste manual
                 showToast('Gunakan Tahan & Paste atau Ctrl+V', true);
             }
         }
@@ -1790,6 +1780,11 @@
             resetDownloadBtn();
             updateInputBtn();
         }
+
+        // --- TAMBAHAN BARU: Inisialisasi awal agar tombol Paste langsung berfungsi ---
+        document.addEventListener("DOMContentLoaded", () => {
+            updateInputBtn();
+        });
     </script>
 </body>
 </html>
