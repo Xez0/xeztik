@@ -11,8 +11,11 @@
     <meta property="og:image" content="https://i.ibb.co.com/xpW0FHH/Columbina.jpg">
     <meta property="og:url" content="https://xez0.github.io/xeztik/">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="canonical" href="https://xez0.github.io/xeztik/">
+    
+    <meta name="referrer" content="no-referrer">
+    <link rel="preconnect" href="https://www.tikwm.com">
 
+    <link rel="canonical" href="https://xez0.github.io/xeztik/">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#050505">
@@ -68,7 +71,6 @@
         }
         .offline-banner.active { transform: translateY(0); }
 
-        /* Lightbox CSS */
         #lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
             z-index: 20000; display: none; justify-content: center; align-items: center;
@@ -80,6 +82,7 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5); object-fit: contain; 
             transform: scale(0.95); transition: transform 0.15s ease-out; 
             touch-action: none; cursor: zoom-in;
+            outline: none; 
         }
         #lightbox img.is-dragging { transition: none !important; }
         
@@ -90,7 +93,7 @@
             align-items: center; justify-content: center; z-index: 20005; backdrop-filter: blur(8px);
             transition: var(--transition);
         }
-        .lb-nav-btn:hover { background: var(--brand-cyan); color: #000; border-color: var(--brand-cyan); transform: translateY(-50%) scale(1.1); }
+        .lb-nav-btn:hover, .lb-nav-btn:focus { background: var(--brand-cyan); color: #000; border-color: var(--brand-cyan); transform: translateY(-50%) scale(1.1); outline: none; }
         #lb-prev { left: 1.25rem; }
         #lb-next { right: 1.25rem; }
         
@@ -101,7 +104,7 @@
             font-size: 1.5rem; z-index: 20005; display: flex; justify-content: center; align-items: center;
             transition: var(--transition); backdrop-filter: blur(8px);
         }
-        #lb-close:hover { background: var(--brand-pink); transform: scale(1.1); }
+        #lb-close:hover, #lb-close:focus { background: var(--brand-pink); transform: scale(1.1); outline: none; }
 
         .glow-effect {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
@@ -145,7 +148,7 @@
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color); border-radius: var(--radius-lg);
             font-size: 1.05rem; font-weight: 500; color: var(--text-primary); font-family: inherit; 
-            transition: var(--transition);
+            transition: border-color 0.4s, background 0.4s, box-shadow 0.4s; 
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
@@ -155,9 +158,16 @@
             background: rgba(255, 255, 255, 0.02); 
         }
 
+        @keyframes inputShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
         .url-input.error-state {
             border-color: var(--brand-pink);
             box-shadow: 0 0 0 4px rgba(254, 44, 85, 0.15), inset 0 2px 4px rgba(0,0,0,0.1);
+            animation: inputShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
         }
 
         .input-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; }
@@ -197,7 +207,6 @@
             border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 1.5rem; 
         }
 
-        /* --- PERBAIKAN UKURAN KARTU VIDEO (TIDAK MEMANJANG SENDIRI) --- */
         .video-box {
             width: 100%; 
             max-width: 320px; 
@@ -230,6 +239,15 @@
             font-size: 0.85rem; font-weight: 700; pointer-events: none; z-index: 5;
             backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
         }
+
+        .pip-btn {
+            position: absolute; top: 0.75rem; left: 0.75rem;
+            background: rgba(20, 20, 22, 0.7); color: white; border: 1px solid rgba(255,255,255,0.15);
+            width: 2.2rem; height: 2.2rem; border-radius: 0.5rem; cursor: pointer; display: none; 
+            align-items: center; justify-content: center; transition: var(--transition); z-index: 10;
+            backdrop-filter: blur(8px);
+        }
+        .pip-btn:hover { background: var(--brand-cyan); color: #000; }
 
         .nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
@@ -404,16 +422,27 @@
         .audio-size { color: var(--brand-cyan); font-family: 'Courier New', Courier, monospace; letter-spacing: 0; }
 
         .audio-placeholder {
-            width: 100%; height: 78px; background: rgba(255,255,255,0.03); border-radius: var(--radius-lg);
-            position: relative; overflow: hidden; display: none; margin-bottom: 1rem;
-            border: 1px solid var(--border-color);
+            width: 100%; height: 3.5rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-lg);
+            display: none; align-items: center; justify-content: center; gap: 0.6rem;
+            margin-bottom: 1rem; border: 1px solid var(--border-color);
+            color: var(--brand-cyan); font-size: 0.9rem; font-weight: 600;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
-        .audio-placeholder::after {
-            content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-            animation: shimmer 1.5s infinite;
+        .mini-spinner {
+            width: 1.25rem; height: 1.25rem;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: var(--brand-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
-        @keyframes shimmer { 100% { left: 100%; } }
+
+        /* SPINNER INLINE UNTUK TEKS UKURAN */
+        .inline-spinner {
+            display: inline-block; width: 0.85rem; height: 0.85rem;
+            border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--brand-cyan);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            vertical-align: middle; margin-left: 4px;
+        }
 
         .custom-audio-player {
             display: flex; align-items: center; gap: 1.25rem;
@@ -460,7 +489,6 @@
         @media (max-width: 992px) { .preview-grid { grid-template-columns: 1fr; gap: 1.25rem; } }
         @media (max-width: 768px) {
             .container { padding: 2rem 1.5rem; border-radius: var(--radius-lg); }
-            /* GANTI BAGIAN INI: Batasi lebarnya saja, jangan tingginya, agar rasio 9:16 tetap utuh di HP */
             .video-box { max-width: 300px; width: 100%; }
             .app-title { font-size: 2rem; }
             .single-action-row { flex-direction: column; }
@@ -494,12 +522,12 @@
 <body>
     <div id="offline-banner" class="offline-banner">Koneksi internet terputus. Beberapa fitur mungkin tidak berfungsi.</div>
     
-    <div id="lightbox" onclick="closeLightbox(event)">
+    <div id="lightbox" tabindex="-1" onclick="closeLightbox(event)">
         <button id="lb-close" onclick="closeLightbox(event)">&times;</button>
         <button id="lb-prev" class="lb-nav-btn" onclick="changeLightboxImage(-1)">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
-        <img id="lightbox-img" src="" alt="Zoomed View">
+        <img id="lightbox-img" src="" alt="Zoomed View" tabindex="0">
         <button id="lb-next" class="lb-nav-btn" onclick="changeLightboxImage(1)">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </button>
@@ -549,6 +577,10 @@
             <div class="preview-grid">
                 
                 <div class="video-box" id="media-container">
+                    <button id="pip-btn" class="pip-btn" title="Picture-in-Picture" aria-label="Aktifkan Mode PiP">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="12" y="14" width="7" height="5" rx="1" ry="1"></rect></svg>
+                    </button>
+
                     <button class="nav-btn prev-btn" id="prev-btn" aria-label="Slide sebelumnya">
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline>
@@ -674,7 +706,10 @@
                     </div>
                 </button>
                 
-                <div id="audio-placeholder" class="audio-placeholder"></div>
+                <div id="audio-placeholder" class="audio-placeholder">
+                    <div class="mini-spinner"></div>
+                    <span>Memuat Preview Audio...</span>
+                </div>
                 <div class="dropdown-wrapper" id="audioDropdownWrapper">
                     <div class="split-btn-group">
                         <button class="split-btn-main" id="downloadAudioBtn">
@@ -726,12 +761,23 @@
 
         </div>
         
-        <div class="footer"><span>Xez</span> | 2026</div>
+        <div class="footer"><span>Xez</span> | <span id="current-year"></span></div>
     </div>
 
-    <div class="toast-container" id="toastBox"></div>
+    <div class="toast-container" id="toastBox" aria-live="polite" aria-atomic="true"></div>
 
     <script>
+        console.log(`
+██╗  ██╗███████╗███████╗████████╗██╗██╗  ██╗
+╚██╗██╔╝██╔════╝╚══███╔╝╚══██╔══╝██║██║ ██╔╝
+ ╚███╔╝ █████╗    ███╔╝    ██║   ██║█████╔╝ 
+ ██╔██╗ ██╔══╝   ███╔╝     ██║   ██║██╔═██╗ 
+██╔╝ ██╗███████╗███████╗   ██║   ██║██║  ██╗
+╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚═╝╚═╝  ╚═╝
+        `);
+
+        document.getElementById('current-year').innerText = new Date().getFullYear();
+
         let mediaData = null;
         let isDownloading = false;
         let wavesurfer = null;
@@ -739,7 +785,6 @@
         let downloadController = null;
         let photoSizeCache = [];
 
-        // Variabel untuk Lightbox & Zoom
         let currentLightboxIndex = 0;
         let currentScale = 1;
         let isDragging = false;
@@ -776,12 +821,15 @@
             return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
         }
 
+        // FUNGSI FETCH SIZE TANPA TIMEOUT (INFINITY LOADING JIKA GAGAL/LAMA)
         async function fetchFileSize(url) {
             try {
                 const response = await fetch(url, { method: 'HEAD' });
                 const size = response.headers.get('content-length');
-                return size ? formatBytes(size) : 'Unknown';
-            } catch (e) { return 'Unknown'; }
+                return size ? formatBytes(size) : 'N/A';
+            } catch (e) { 
+                return 'N/A'; 
+            }
         }
 
         function showToast(msg, isError = false) {
@@ -839,11 +887,10 @@
             }
         }
 
-        // --- CLIPBOARD FALLBACK (AGAR BERFUNGSI DI LOCALHOST / HTTP) ---
         function copyFallback(text, labelName) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style.position = "fixed"; // Hilangkan dari layar
+            textArea.style.position = "fixed"; 
             textArea.style.top = "-9999px";
             document.body.appendChild(textArea);
             textArea.focus();
@@ -895,11 +942,13 @@
             updateLightboxImage();
             const lightbox = document.getElementById('lightbox');
             lightbox.style.display = 'flex';
-            setTimeout(() => lightbox.classList.add('show'), 10);
+            setTimeout(() => {
+                lightbox.classList.add('show');
+                lightbox.focus(); 
+            }, 10);
         }
 
         function closeLightbox(e) {
-            // Cek jika trigger dari klik langsung pada tombol silang / background hitam
             if (e && e.type === 'click') {
                 if (e.target.id !== 'lightbox' && e.target.id !== 'lb-close') return;
             }
@@ -957,7 +1006,6 @@
             lbImg.style.cursor = currentScale > 1 ? 'grab' : 'zoom-in';
         }
 
-        // DOUBLE CLICK ZOOM
         lbImg.addEventListener('dblclick', () => {
             if (currentScale > 1) {
                 resetZoom(); 
@@ -967,7 +1015,6 @@
             }
         });
 
-        // ZOOM PC (Mouse Wheel)
         lbImg.addEventListener('wheel', (e) => {
             e.preventDefault();
             currentScale += e.deltaY * -0.002;
@@ -975,7 +1022,6 @@
             applyTransform();
         });
 
-        // DRAG/PAN untuk PC/Mobile saat di-zoom
         lbImg.addEventListener('mousedown', (e) => {
           e.preventDefault();
             if (currentScale > 1) {
@@ -1002,7 +1048,6 @@
             if (currentScale > 1) lbImg.style.cursor = 'grab';
         });
 
-        // PINCH ZOOM MOBILE
         let initDist = 0;
         let initScale = 1;
 
@@ -1039,13 +1084,32 @@
             lbImg.classList.remove('is-dragging'); 
         });
 
-        // KEYBOARD SHORTCUTS
-        window.addEventListener('keydown', (e) => {
-            const lb = document.getElementById('lightbox');
-            if (lb.classList.contains('show')) {
-                if (e.key === 'Escape') closeLightbox(e);
-                if (e.key === 'ArrowLeft') changeLightboxImage(-1);
-                if (e.key === 'ArrowRight') changeLightboxImage(1);
+        const lightboxElement = document.getElementById('lightbox');
+        const focusableElementsSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+        
+        lightboxElement.addEventListener('keydown', function(e) {
+            if (!lightboxElement.classList.contains('show')) return;
+
+            if (e.key === 'Escape') closeLightbox(e);
+            if (e.key === 'ArrowLeft') changeLightboxImage(-1);
+            if (e.key === 'ArrowRight') changeLightboxImage(1);
+
+            if (e.key === 'Tab') {
+                const focusableContent = Array.from(lightboxElement.querySelectorAll(focusableElementsSelector)).filter(el => el.style.display !== 'none');
+                const firstFocusableElement = focusableContent[0];
+                const lastFocusableElement = focusableContent[focusableContent.length - 1];
+
+                if (e.shiftKey) { 
+                    if (document.activeElement === firstFocusableElement || document.activeElement === lightboxElement) {
+                        lastFocusableElement.focus();
+                        e.preventDefault();
+                    }
+                } else { 
+                    if (document.activeElement === lastFocusableElement) {
+                        firstFocusableElement.focus();
+                        e.preventDefault();
+                    }
+                }
             }
         });
 
@@ -1054,8 +1118,10 @@
             const cachedSize = photoSizeCache[index - 1];
             if (cachedSize) {
                 sizeLabel.innerText = `(~${cachedSize})`;
+            } else if (cachedSize === 'N/A') {
+                sizeLabel.innerText = '(N/A)';
             } else {
-                sizeLabel.innerText = '';
+                sizeLabel.innerHTML = '(<span class="inline-spinner"></span>)';
             }
         }
 
@@ -1123,18 +1189,32 @@
             if(!mediaData || !mediaData.authorAvatar) return;
             showToast("Mengunduh Foto Profil...");
             document.getElementById('creator-dropdown').classList.remove('show');
-            downloadFileByBlob(mediaData.authorAvatar, `Xeztik_Avatar_${mediaData.authorUsername}.jpeg`, null);
+            downloadFileByBlob(mediaData.authorAvatar, `Xeztik_${mediaData.authorUsername}_Avatar.jpeg`, null);
         });
 
-        // DOWNLOAD THUMBNAIL VIDEO
         document.getElementById('dl-thumb-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             if (mediaData && mediaData.cover) {
                 showToast("Mengunduh Thumbnail...");
                 document.getElementById('creator-dropdown').classList.remove('show');
-                downloadFileByBlob(mediaData.cover, `Xeztik_Cover_${mediaData.id}.jpeg`, null);
+                downloadFileByBlob(mediaData.cover, `Xeztik_${mediaData.authorUsername}_${mediaData.id}_Cover.jpeg`, null);
             } else {
                 showToast("Thumbnail tidak tersedia", true);
+            }
+        });
+
+        const pipBtn = document.getElementById('pip-btn');
+        const videoEl = document.getElementById('video-preview');
+        
+        pipBtn.addEventListener('click', async () => {
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await videoEl.requestPictureInPicture();
+                }
+            } catch (err) {
+                showToast("Perangkat tidak mendukung Picture-in-Picture", true);
             }
         });
 
@@ -1150,6 +1230,8 @@
             
             if (!tiktokRegex.test(urlVal)) {
                 showToast('Harap masukkan URL TikTok yang valid!', true);
+                urlInput.classList.remove('error-state');
+                void urlInput.offsetWidth; 
                 urlInput.classList.add('error-state'); 
                 return;
             }
@@ -1170,7 +1252,6 @@
                 });
                 clearTimeout(timeoutId);
 
-                // ERROR 429 HANDLING
                 if (response.status === 429) throw new Error("Terlalu banyak permintaan ke server! Tunggu sebentar.");
                 if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
@@ -1204,8 +1285,8 @@
                 }
 
                 toggleVisibility('size-badge', true, 'inline-flex');
-                document.getElementById('media-size').innerText = 'Menghitung...';
-                document.getElementById('audio-size').innerText = '';
+                document.getElementById('media-size').innerHTML = 'Ukuran: <span class="inline-spinner"></span>';
+                document.getElementById('audio-size').innerHTML = '<span class="inline-spinner"></span>';
 
                 if (isPhoto) {
                     mediaData = { 
@@ -1215,6 +1296,7 @@
                     };
 
                     toggleVisibility('video-preview', false);
+                    toggleVisibility('pip-btn', false); 
                     const gallery = document.getElementById('image-gallery');
                     toggleVisibility('image-gallery', true, 'flex');
                     gallery.innerHTML = '';
@@ -1223,7 +1305,7 @@
                         let img = document.createElement('img');
                         img.src = imgUrl;
                         img.alt = `TikTok Slide ${i + 1}`; 
-                        img.loading = 'lazy'; // LAZY LOADING
+                        img.loading = 'lazy';
                         img.dataset.index = i;
                         gallery.appendChild(img);
                     });
@@ -1248,20 +1330,29 @@
                     document.getElementById('photo-target').value = 1;
                     document.getElementById('target-label').innerText = 1;
                     
-                    document.getElementById('media-size').innerText = 'Menghitung total...';
+                    document.getElementById('media-size').innerHTML = 'Total: <span class="inline-spinner"></span>';
                     photoSizeCache = new Array(json.data.images.length).fill(null);
+
+                    // Memanggil fungsi untuk trigger logo spinner di UI foto pertama
+                    updateSinglePhotoSizeUI(1);
 
                     const sizePromises = json.data.images.map(async (imgUrl, i) => {
                         try {
-                            const res = await fetch(imgUrl, { method: 'HEAD' });
-                            const bytes = parseInt(res.headers.get('content-length')) || 0;
-                            photoSizeCache[i] = bytes > 0 ? formatBytes(bytes) : '';
-                            if (parseInt(document.getElementById('photo-target').value) === (i + 1)) {
-                                updateSinglePhotoSizeUI(i + 1);
+                            const sizeStr = await fetchFileSize(imgUrl);
+                            if (sizeStr === 'N/A') {
+                                photoSizeCache[i] = 'N/A';
+                                if (parseInt(document.getElementById('photo-target').value) === (i + 1)) updateSinglePhotoSizeUI(i + 1);
+                                return 0;
+                            } else {
+                                photoSizeCache[i] = sizeStr;
+                                if (parseInt(document.getElementById('photo-target').value) === (i + 1)) updateSinglePhotoSizeUI(i + 1);
+                                
+                                // Kalkulasi bytes asli kembali untuk total
+                                const res = await fetch(imgUrl, { method: 'HEAD' });
+                                return parseInt(res.headers.get('content-length')) || 0;
                             }
-                            return bytes;
                         } catch (e) {
-                            photoSizeCache[i] = '';
+                            photoSizeCache[i] = 'N/A';
                             return 0;
                         }
                     });
@@ -1271,7 +1362,7 @@
                         if (totalBytes > 0) {
                             document.getElementById('media-size').innerText = `Total: ~${formatBytes(totalBytes)}`;
                         } else {
-                            document.getElementById('media-size').innerText = 'Total tidak diketahui';
+                            document.getElementById('media-size').innerText = 'Total: N/A';
                         }
                     });
 
@@ -1290,10 +1381,15 @@
                     toggleVisibility('next-btn', false);
                     toggleVisibility('single-photo-download', false);
 
-                    const videoEl = document.getElementById('video-preview');
                     toggleVisibility('video-preview', true);
                     videoEl.src = mediaData.url;
                     if(mediaData.cover) videoEl.poster = mediaData.cover; 
+                    
+                    if (document.pictureInPictureEnabled) {
+                        toggleVisibility('pip-btn', true, 'flex');
+                    } else {
+                        toggleVisibility('pip-btn', false);
+                    }
 
                     iconSlot1.innerHTML = SVG_VIDEO;
                     iconSlot2.innerHTML = SVG_CLOCK;
@@ -1313,7 +1409,7 @@
                         document.getElementById('media-size').innerText = formatBytes(json.data.size);
                     } else {
                         fetchFileSize(mediaData.url).then(size => {
-                            document.getElementById('media-size').innerText = size !== 'Unknown' ? size : 'Tidak diketahui';
+                            document.getElementById('media-size').innerText = size;
                         });
                     }
                 }
@@ -1328,11 +1424,11 @@
                     audioTrigger.style.opacity = '1'; audioTrigger.style.pointerEvents = 'auto';
                     audioBtn.style.opacity = '1'; audioBtn.style.pointerEvents = 'auto';
                     
-                    audioPlaceholder.style.display = 'block';
+                    audioPlaceholder.style.display = 'flex';
                     audioWrapper.style.display = 'none';
 
                     fetchFileSize(mediaData.music).then(size => {
-                        if (size !== 'Unknown') document.getElementById('audio-size').innerText = `(${size})`;
+                        document.getElementById('audio-size').innerText = size === 'N/A' ? 'N/A' : `(${size})`;
                     });
 
                     if (wavesurfer) { wavesurfer.destroy(); wavesurfer = null; }
@@ -1351,10 +1447,19 @@
 
                     wavesurfer.on('play', () => { toggleVisibility('play-icon', false); toggleVisibility('pause-icon', true); });
                     wavesurfer.on('pause', () => { toggleVisibility('play-icon', true); toggleVisibility('pause-icon', false); });
+                    
                     wavesurfer.on('ready', () => { 
                         document.getElementById('audio-time').innerText = "0:00"; 
                         audioPlaceholder.style.display = 'none';
                         audioWrapper.style.display = 'flex';
+                    });
+
+                    wavesurfer.on('error', (err) => {
+                        console.warn("WaveSurfer Error:", err);
+                        audioPlaceholder.style.display = 'none';
+                        audioWrapper.style.display = 'flex';
+                        audioTrigger.style.opacity = '0.3'; 
+                        audioTrigger.style.pointerEvents = 'none';
                     });
 
                 } else {
@@ -1387,7 +1492,6 @@
             copyTextDirect('caption', 'Caption');
         });
 
-        // EVENT DELEGATION UNTUK GALERI
         document.getElementById('image-gallery').addEventListener('click', (e) => {
             if (e.target.tagName === 'IMG') {
                 const index = parseInt(e.target.dataset.index);
@@ -1457,7 +1561,11 @@
                         a.download = filename;
                         document.body.appendChild(a);
                         a.click();
-                        window.URL.revokeObjectURL(blobUrl); 
+                        
+                        setTimeout(() => {
+                            window.URL.revokeObjectURL(blobUrl); 
+                        }, 2000);
+
                         a.remove();
                         resolve();
                     } else {
@@ -1490,7 +1598,7 @@
             try {
                 if (mediaData.type === 'video') {
                     btnLabel.innerText = 'Mengunduh... 0%';
-                    await downloadFileByBlob(mediaData.url, `Xeztik_${mediaData.id}.${mediaData.ext}`, (percent) => {
+                    await downloadFileByBlob(mediaData.url, `Xeztik_${mediaData.authorUsername}_${mediaData.id}.${mediaData.ext}`, (percent) => {
                         progress.style.width = percent + '%';
                         btnLabel.innerText = `Mengunduh... ${percent}%`;
                     }, downloadController.signal);
@@ -1506,7 +1614,7 @@
                         const chunk = mediaData.images.slice(i, i + chunkSize);
                         await Promise.all(chunk.map(async (imgUrl, index) => {
                             const globalIndex = i + index;
-                            await downloadFileByBlob(imgUrl, `Xeztik_${mediaData.id}_Slide${globalIndex+1}.${mediaData.ext}`, null, downloadController.signal);
+                            await downloadFileByBlob(imgUrl, `Xeztik_${mediaData.authorUsername}_${mediaData.id}_Slide${globalIndex+1}.${mediaData.ext}`, null, downloadController.signal);
                             completed++;
                             let percent = Math.round((completed / totalPhotos) * 100);
                             progress.style.width = percent + '%';
@@ -1542,7 +1650,7 @@
             isDownloading = true;
             
             try {
-                await downloadFileByBlob(mediaData.images[index], `Xeztik_${mediaData.id}_Slide${index+1}.${mediaData.ext}`, null);
+                await downloadFileByBlob(mediaData.images[index], `Xeztik_${mediaData.authorUsername}_${mediaData.id}_Slide${index+1}.${mediaData.ext}`, null);
                 showToast(`Foto ke-${index+1} berhasil diunduh!`);
             } catch (e) {
                 showToast("Gagal mengunduh foto.", true);
@@ -1565,7 +1673,7 @@
             isDownloading = true;
             
             try {
-                await downloadFileByBlob(mediaData.music, `Xeztik_Audio_${mediaData.id}.mp3`, null);
+                await downloadFileByBlob(mediaData.music, `Xeztik_${mediaData.authorUsername}_${mediaData.id}.mp3`, null);
                 showToast('Audio berhasil diunduh!');
             } catch (e) {
                 showToast('Gagal mengunduh audio.', true);
@@ -1601,6 +1709,7 @@
             toggleVisibility('next-btn', false);
             toggleVisibility('single-photo-download', false);
             toggleVisibility('size-badge', false);
+            toggleVisibility('pip-btn', false);
             
             document.getElementById('audioDropdownWrapper').classList.remove('open');
             document.getElementById('audioDropdownMenu').classList.remove('show');
