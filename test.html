@@ -1797,6 +1797,7 @@
         // --- Inisialisasi awal agar tombol Paste langsung berfungsi ---
         document.addEventListener("DOMContentLoaded", () => {
             updateInputBtn();
+            setTimeout(() => { document.getElementById('install-banner').classList.add('show'); }, 1500);
         });
     </script>
 </body>
